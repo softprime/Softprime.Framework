@@ -9,29 +9,42 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "api", "api", "{BAC93858-E4B
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Softprime.Framework.Api", "api\Softprime.Framework.Api\Softprime.Framework.Api.csproj", "{4CFBB830-769A-4266-8532-124DB67D257B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softprime.Framework.Api.Client", "api\Softprime.Framework.Api.Client\Softprime.Framework.Api.Client.csproj", "{99DF96FD-0561-49C8-BF85-903DFF1CDCBA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Softprime.Framework.Api.Client", "api\Softprime.Framework.Api.Client\Softprime.Framework.Api.Client.csproj", "{99DF96FD-0561-49C8-BF85-903DFF1CDCBA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "general", "general", "{7FC80A6E-9AA9-4330-8065-78C933883CD2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softprime.Framework.Common", "general\Softprime.Framework.Common\Softprime.Framework.Common.csproj", "{1870C6ED-5CFB-4D97-ABF0-9FE90F3B0BF9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Softprime.Framework.Common", "general\Softprime.Framework.Common\Softprime.Framework.Common.csproj", "{1870C6ED-5CFB-4D97-ABF0-9FE90F3B0BF9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "data", "data", "{91661D33-E018-4ADE-AB71-593989A82FDC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softprime.Framework.DAL", "data\Softprime.Framework.DAL\Softprime.Framework.DAL.csproj", "{9863EB71-621C-462A-8289-BB6D8E0D228A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Softprime.Framework.DAL", "data\Softprime.Framework.DAL\Softprime.Framework.DAL.csproj", "{9863EB71-621C-462A-8289-BB6D8E0D228A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softprime.Framework.Domain", "data\Softprime.Framework.Domain\Softprime.Framework.Domain.csproj", "{DB800A9F-85B7-4D9B-8D6A-082277FC4A0A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Softprime.Framework.Domain", "data\Softprime.Framework.Domain\Softprime.Framework.Domain.csproj", "{DB800A9F-85B7-4D9B-8D6A-082277FC4A0A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softprime.Framework.EFCore3", "data\Softprime.Framework.EFCore3\Softprime.Framework.EFCore3.csproj", "{D01B4D7B-55E6-4AB8-8C93-B3D1AA83B5C4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Softprime.Framework.EFCore3", "data\Softprime.Framework.EFCore3\Softprime.Framework.EFCore3.csproj", "{D01B4D7B-55E6-4AB8-8C93-B3D1AA83B5C4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softprime.Framework.EFCore5", "data\Softprime.Framework.EFCore5\Softprime.Framework.EFCore5.csproj", "{5F5E72AC-ADB1-441F-9143-B9E62B2DE97E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Softprime.Framework.EFCore5", "data\Softprime.Framework.EFCore5\Softprime.Framework.EFCore5.csproj", "{5F5E72AC-ADB1-441F-9143-B9E62B2DE97E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softprime.Framework.NH", "data\Softprime.Framework.NH\Softprime.Framework.NH.csproj", "{0AB1C930-56EA-4B0B-86B3-A06A02B3180B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Softprime.Framework.NH", "data\Softprime.Framework.NH\Softprime.Framework.NH.csproj", "{0AB1C930-56EA-4B0B-86B3-A06A02B3180B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "mail", "mail", "{3AF16ADE-8FF1-4125-83E8-BAFA5E54B45C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softprime.Framework.Mailer", "mail\Softprime.Framework.Mailer\Softprime.Framework.Mailer.csproj", "{0791F2EA-20FD-4605-B539-A194742EA5B7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Softprime.Framework.Mailer", "mail\Softprime.Framework.Mailer\Softprime.Framework.Mailer.csproj", "{0791F2EA-20FD-4605-B539-A194742EA5B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softprime.Framework.Mailer.AWS", "mail\Softprime.Framework.Mailer.AWS\Softprime.Framework.Mailer.AWS.csproj", "{7ADC4797-BB52-499F-B768-24652C2C066B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Softprime.Framework.Mailer.AWS", "mail\Softprime.Framework.Mailer.AWS\Softprime.Framework.Mailer.AWS.csproj", "{7ADC4797-BB52-499F-B768-24652C2C066B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softprime.Framework.Mailer.SendGrid", "mail\Softprime.Framework.Mailer.SendGrid\Softprime.Framework.Mailer.SendGrid.csproj", "{0CECFE04-5C22-4C66-8EF8-19526D95A0BE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "multitenant", "multitenant", "{AFBD5E7A-1DD6-4376-865D-E7EFA57682FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softprime.Framework.Multitenancy", "multitenant\Softprime.Framework.Multitenancy\Softprime.Framework.Multitenancy.csproj", "{DA35F2C2-1552-439C-8128-7A921533A669}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softprime.Framework.EF6", "data\Softprime.Framework.EF6\Softprime.Framework.EF6.csproj", "{4CB0D6A4-E9C2-4338-B901-A3575749DE40}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E2AB166D-DB04-44EF-898D-DE264766E567}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE.txt = LICENSE.txt
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,6 +96,18 @@ Global
 		{7ADC4797-BB52-499F-B768-24652C2C066B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7ADC4797-BB52-499F-B768-24652C2C066B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7ADC4797-BB52-499F-B768-24652C2C066B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0CECFE04-5C22-4C66-8EF8-19526D95A0BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CECFE04-5C22-4C66-8EF8-19526D95A0BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CECFE04-5C22-4C66-8EF8-19526D95A0BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CECFE04-5C22-4C66-8EF8-19526D95A0BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA35F2C2-1552-439C-8128-7A921533A669}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA35F2C2-1552-439C-8128-7A921533A669}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA35F2C2-1552-439C-8128-7A921533A669}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA35F2C2-1552-439C-8128-7A921533A669}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4CB0D6A4-E9C2-4338-B901-A3575749DE40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CB0D6A4-E9C2-4338-B901-A3575749DE40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CB0D6A4-E9C2-4338-B901-A3575749DE40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CB0D6A4-E9C2-4338-B901-A3575749DE40}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -99,6 +124,9 @@ Global
 		{0AB1C930-56EA-4B0B-86B3-A06A02B3180B} = {91661D33-E018-4ADE-AB71-593989A82FDC}
 		{0791F2EA-20FD-4605-B539-A194742EA5B7} = {3AF16ADE-8FF1-4125-83E8-BAFA5E54B45C}
 		{7ADC4797-BB52-499F-B768-24652C2C066B} = {3AF16ADE-8FF1-4125-83E8-BAFA5E54B45C}
+		{0CECFE04-5C22-4C66-8EF8-19526D95A0BE} = {3AF16ADE-8FF1-4125-83E8-BAFA5E54B45C}
+		{DA35F2C2-1552-439C-8128-7A921533A669} = {AFBD5E7A-1DD6-4376-865D-E7EFA57682FE}
+		{4CB0D6A4-E9C2-4338-B901-A3575749DE40} = {91661D33-E018-4ADE-AB71-593989A82FDC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {97DCF620-A4A1-4A9F-A727-53BC8F913A7F}
