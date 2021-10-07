@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 using Softprime.Framework.DAL;
 using Softprime.Framework.DAL.Entity;
 using Softprime.Framework.DAL.Repository;
-using Microsoft.EntityFrameworkCore;
 
-namespace Softprime.Framework.EF
+namespace Softprime.Framework.EFCore5
 {
     /// <summary>
     /// Unit of Work para repositório genérico com EntityFrameworkCore

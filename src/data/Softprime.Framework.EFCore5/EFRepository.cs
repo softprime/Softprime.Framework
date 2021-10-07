@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Softprime.Framework.DAL.Entity;
 using Softprime.Framework.DAL.Repository;
-using Microsoft.EntityFrameworkCore;
 
-namespace Softprime.Framework.EF
+namespace Softprime.Framework.EFCore5
 {
     /// <summary>
     /// Repositório genérico de dados para EntityFrameworkCore
