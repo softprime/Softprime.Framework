@@ -26,6 +26,11 @@ namespace Softprime.Framework.Api.Client
         {
         }
 
+        public ApiClient(string uriService, string baseUrl, string apiKey, string tenantKey)
+           : base(uriService, baseUrl, apiKey, tenantKey)
+        {
+        }
+
         /// <inheritdoc />
         /// <summary>
         /// Retorma um IEnumerable do objeto tipado

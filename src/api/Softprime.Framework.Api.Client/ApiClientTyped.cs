@@ -19,5 +19,10 @@ namespace Softprime.Framework.Api.Client
             : base(uriService, baseUrl, apiKey)
         {
         }
+
+        public ApiClientTyped(string uriService, string baseUrl, string apiKey, string tenantKey)
+           : base(uriService, baseUrl, apiKey, tenantKey)
+        {
+        }
     }
 }

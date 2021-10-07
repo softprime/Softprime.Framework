@@ -27,6 +27,17 @@ namespace Softprime.Framework.Api.Client
             Client.Timeout = new TimeSpan(0, 0, 1, 0);
         }
 
+        protected ApiClientBase(string uriService, string baseUrl, string apiKey, string tenantKey)
+        {
+            UriService = uriService;
+            Client = new HttpClient { BaseAddress = new Uri(baseUrl) };
+            Client.DefaultRequestHeaders.Accept.Clear();
+            Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            Client.DefaultRequestHeaders.Add("ApiKey", apiKey);
+            Client.DefaultRequestHeaders.Add("TenantKey", tenantKey);
+            Client.Timeout = new TimeSpan(0, 0, 1, 0);
+        }
+
         public string UriService { get; }
 
         public HttpClient Client { get; }
