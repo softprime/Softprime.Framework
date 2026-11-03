@@ -7,6 +7,7 @@
 ## Sumário
 
 - [Estado atual verificado](#estado-atual-verificado)
+- [Inventário de consumidores e dependências (#10)](#inventário-de-consumidores-e-dependências-10)
 - [Arquitetura alvo proposta](#arquitetura-alvo-proposta)
 - [Matriz de compatibilidade](#matriz-de-compatibilidade)
 - [Política NuGet](#política-nuget)
@@ -45,12 +46,33 @@ Fatos confirmados por leitura direta do repositório (não inferidos):
 | Mailer.SendGrid | mail | `netstandard2.0;netstandard2.1;net48` | `SendGrid` 9.22.0; → Mailer | — |
 | Multitenancy | multitenant | `netstandard2.0;netstandard2.1;net48` | `Microsoft.AspNetCore` 2.2.0, `Microsoft.Extensions.Caching.Memory` 5.0.0, `System.ComponentModel.Annotations` 5.0.0 | — |
 
-**Consumidores externos:** desconhecidos neste repositório — ver issue [#10] (`a confirmar`). A coluna "consumidores" e "target recomendado" só será preenchida com rastreabilidade após o inventário.
+**Consumidores externos:** desconhecidos neste repositório — ver inventário detalhado abaixo na issue [#10] (`a confirmar`).
 
 ### Observações factuais relevantes
 
 - A documentação preliminar (`tech.md`) afirmava apenas `netstandard2.0`/`2.1`; a auditoria confirma que **vários projetos também miram `net48`** e que **EFCore5 mira apenas `netstandard2.1`** e **EF6 mira `netstandard2.1;net48`**.
 - `Version=2.0.0` é a versão de **build**; **não** há evidência, neste repositório, do que está efetivamente publicado no feed NuGet. **Pendente de validação** (issue [#10]).
+
+---
+
+## Inventário de consumidores e dependências (#10)
+
+> **Entregável da issue [#10] (Fase 0 — Conhecer e proteger)**.
+
+O mapeamento detalhado dos 14 pacotes da solution, suas dependências internas e transitivas, e os bloqueadores de upgrade conhecidos estão documentados na íntegra no documento dedicado:
+
+👉 **[Inventário de Pacotes, Consumidores e Dependências (`docs/package-inventory.md`)](package-inventory.md)**
+
+### Síntese executiva dos achados:
+
+- **14 pacotes catalogados:** Todos com `Version=2.0.0` no `.csproj` (versão declarada de build; versões efetivamente publicadas marcadas como `a confirmar`).
+- **Suporte explícito a `net48` (9 pacotes):** `Domain`, `DAL`, `EFCore3`, `EF6`, `NH`, `Mailer`, `Mailer.AWS`, `Mailer.SendGrid`, `Multitenancy`. Consumidores legados corporativos precisam ser preservados via multi-targeting.
+- **Assimetrias e bloqueadores críticos identificados:**
+  - `EFCore5`: Mira **apenas `netstandard2.1`** (incompatível com `.NET Framework 4.8`).
+  - `EF6`: Linha isolada (`netstandard2.1;net48`), ecossistema distinto de EF Core.
+  - `Api` e `Multitenancy`: Acoplamento ao `Microsoft.AspNetCore.Mvc 2.2.0` / `Microsoft.AspNetCore 2.2.0` (fora de suporte desde 2019 e incompatível com .NET 8/10 moderno).
+  - `Common.Security`: Exige auditoria e preservação comportamental de algoritmos criptográficos para não quebrar a leitura de dados legados já armazenados.
+  - `Mailer`: Depende de versão Release Candidate instável (`RazorLight 2.0.0-rc.3`) com compilação Roslyn em runtime.
 
 ---
 
@@ -107,7 +129,7 @@ Fatos confirmados por leitura direta do repositório (não inferidos):
 ## Plano de migração (fases e gates)
 
 ### Fase 0 — Conhecer e proteger (pré-requisito de qualquer código)
-- [#10] Inventário de consumidores e dependências (P0)
+- [#10] Inventário de consumidores e dependências (P0) — *Concluído no planejamento*
 - [#11] Baseline de APIs públicas e comportamento (P0)
 - [#7] Estratégia de testes / caracterização (P0)
 
@@ -115,7 +137,7 @@ Fatos confirmados por leitura direta do repositório (não inferidos):
 - [#3] Matriz de compatibilidade e estratégia de targets (P1)
 - [#12] Política de versionamento, suporte e publicação (P1)
 - [#8] Planejamento de CI (build/test/pack, sem publish) (P1)
-- [#9] Centralização de metadados / avaliação de CPM (P2)
+- [#9] Centralização de metadados / avaliar CPM (P2)
 
 ### Fase 2 — Modernizar seletivamente (só após os gates)
 - [#4] ASP.NET Core / MVC 2.2 → moderno (P1)
@@ -127,7 +149,7 @@ Fatos confirmados por leitura direta do repositório (não inferidos):
 - Validação com consumidores, release candidate (prerelease) e **aprovação manual** de publicação.
 
 ### Gates obrigatórios antes do primeiro PR de modernização
-- [ ] Inventário auditado e lacunas de consumidores explicitadas ([#10])
+- [x] Inventário auditado e lacunas de consumidores explicitadas ([#10])
 - [ ] Decisão de targets aprovada por pacote ([#3])
 - [ ] Baseline de APIs e estratégia de regressão definidas ([#11], [#7])
 - [ ] Plano para validar consumidores `net48` ([#11])
@@ -145,19 +167,19 @@ Fatos confirmados por leitura direta do repositório (não inferidos):
 
 ## Backlog de issues
 
-| # | Título | Prioridade | Fase | Bloqueada por |
-|---|---|---|---|---|
-| [#10] | [Arquitetura] Inventariar consumidores e dependências | P0 | 0 | — |
-| [#11] | [Qualidade] Baseline de APIs públicas e compatibilidade | P0 | 0 | relaciona #7, #10 |
-| [#7]  | Estratégia de testes / caracterização | P0 | 0 | — |
-| [#3]  | [Arquitetura] Matriz de compatibilidade e targets | P1 | 1 | #10, #11 |
-| [#12] | [NuGet] Política de versionamento e publicação | P1 | 1 | relaciona #9, #8 |
-| [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | #7, #3 |
-| [#9]  | Centralizar metadados / avaliar CPM | P2 | 1 | relaciona #12, #3 |
-| [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | #3, #10, #11 |
-| [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | #3, #10 |
-| [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | #3, #11 |
-| [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | #3, #12 |
+| # | Título | Prioridade | Fase | Bloqueada por | Status / Entregável |
+|---|---|---|---|---|---|
+| [#10] | [Arquitetura] Inventariar consumidores e dependências | P0 | 0 | — | Entregue ([docs/package-inventory.md](package-inventory.md)) |
+| [#11] | [Qualidade] Baseline de APIs públicas e compatibilidade | P0 | 0 | relaciona #7, #10 | Pendente de planejamento |
+| [#7]  | Estratégia de testes / caracterização | P0 | 0 | — | Pendente de planejamento |
+| [#3]  | [Arquitetura] Matriz de compatibilidade e targets | P1 | 1 | #10, #11 | Bloqueada |
+| [#12] | [NuGet] Política de versionamento e publicação | P1 | 1 | relaciona #9, #8 | Bloqueada |
+| [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | #7, #3 | Bloqueada |
+| [#9]  | Centralizar metadados / avaliar CPM | P2 | 1 | relaciona #12, #3 | Bloqueada |
+| [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | #3, #10, #11 | Bloqueada |
+| [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | #3, #10 | Bloqueada |
+| [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | #3, #11 | Bloqueada |
+| [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | #3, #12 | Bloqueada |
 
 ### Primeiro lote seguro de execução
 
@@ -167,8 +189,7 @@ Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento
 
 ## Riscos / pendências
 
-- **Consumidores desconhecidos (Pendente de validação):** sem acesso aos repositórios das aplicações, o mapa de consumidores e os bloqueadores de upgrade são hipóteses até [#10] ser concluída. Não tratar como fato.
-- **Estado publicado no NuGet (Pendente de validação):** `Version=2.0.0` é a de build; o que está no feed não foi verificado aqui.
+- **Consumidores externos e estado do feed NuGet (Pendente de validação):** O inventário factual do repositório foi concluído na issue [#10] em [docs/package-inventory.md](package-inventory.md). As lacunas de repositórios consumidores externos e a listagem de versões reais do feed NuGet corporativo foram formalizadas com status `a confirmar`.
 - **`Common.Security`:** qualquer mudança de algoritmo precisa preservar a leitura de dados já criptografados; auditar antes de alterar (#6). Não modificar nesta fase.
 - **`net48` + ASP.NET Core moderno:** incompatível; exige decisão sobre manter linha legada vs. descontinuar (#4).
 - **Runners de CI:** targets `net48` exigem runner Windows (#8).
