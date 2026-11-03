@@ -8,6 +8,7 @@
 
 - [Estado atual verificado](#estado-atual-verificado)
 - [Inventário de consumidores e dependências (#10)](#inventário-de-consumidores-e-dependências-10)
+- [Estratégia de testes e baseline comportamental (#7)](#estratégia-de-testes-e-baseline-comportamental-7)
 - [Arquitetura alvo proposta](#arquitetura-alvo-proposta)
 - [Matriz de compatibilidade](#matriz-de-compatibilidade)
 - [Política NuGet](#política-nuget)
@@ -76,6 +77,29 @@ O mapeamento detalhado dos 14 pacotes da solution, suas dependências internas e
 
 ---
 
+## Estratégia de testes e baseline comportamental (#7)
+
+> **Entregável da issue [#7] (Fase 0 — Conhecer e proteger)**.
+
+A estratégia completa de testes de caracterização para fixar o comportamento atual pré-migração está documentada na íntegra no documento dedicado:
+
+👉 **[Estratégia de Testes e Caracterização (`docs/test-strategy.md`)](test-strategy.md)**
+
+### Síntese executiva da estratégia:
+
+- **Stack padronizada:** `xUnit` (test runner) + `FluentAssertions` (asserções expressivas) + `Moq` (mocks/fakes de contratos) + `SQLite` em memória/arquivo (persistência relacional sem dependência de infraestrutura externa).
+- **Estrutura enxuta de projetos planejada:**
+  - `tests/Softprime.Framework.Core.Tests`: Domínio, Common e DTOs (`net48;net10.0`).
+  - `tests/Softprime.Framework.Data.Tests`: DAL e ORMs (`net48;net10.0`).
+  - `tests/Softprime.Framework.SmokeTests.Net48` e `Net10`: Smoke tests de consumo dos pacotes NuGet reais (`.nupkg`).
+- **Ordem de prioridade de caracterização em 3 etapas:**
+  1. *Etapa 1 (P0 - Crítica):* `EntityWithTypedId` (igualdade, `IsTransient`, hash code estável, hooks de ciclo de vida), `IRepository.Find` (paginação com `out total`, CRUD) e golden tests de criptografia em `Common.Security`.
+  2. *Etapa 2 (P1 - Alta):* Mapeamentos e consultas relacionais dos ORMs (`EFCore3`, `EFCore5`, `EF6`, `NH`).
+  3. *Etapa 3 (P2 - Média):* DTOs, serialização HTTP e dispatchers de e-mail.
+- **Invariante da Fase 0:** Nenhum projeto de teste foi criado no código-fonte nesta rodada; a criação dos `.csproj` ocorrerá no início da fase de desenvolvimento.
+
+---
+
 ## Arquitetura alvo proposta
 
 > **Proposta**, sujeita à aprovação nas issues [#3] e [#12]. Não é estado atual.
@@ -131,7 +155,7 @@ O mapeamento detalhado dos 14 pacotes da solution, suas dependências internas e
 ### Fase 0 — Conhecer e proteger (pré-requisito de qualquer código)
 - [#10] Inventário de consumidores e dependências (P0) — *Concluído no planejamento*
 - [#11] Baseline de APIs públicas e comportamento (P0)
-- [#7] Estratégia de testes / caracterização (P0)
+- [#7] Estratégia de testes / caracterização (P0) — *Concluído no planejamento*
 
 ### Fase 1 — Definir e automatizar
 - [#3] Matriz de compatibilidade e estratégia de targets (P1)
@@ -171,7 +195,7 @@ O mapeamento detalhado dos 14 pacotes da solution, suas dependências internas e
 |---|---|---|---|---|---|
 | [#10] | [Arquitetura] Inventariar consumidores e dependências | P0 | 0 | — | Entregue ([docs/package-inventory.md](package-inventory.md)) |
 | [#11] | [Qualidade] Baseline de APIs públicas e compatibilidade | P0 | 0 | relaciona #7, #10 | Pendente de planejamento |
-| [#7]  | Estratégia de testes / caracterização | P0 | 0 | — | Pendente de planejamento |
+| [#7]  | Estratégia de testes / caracterização | P0 | 0 | — | Entregue ([docs/test-strategy.md](test-strategy.md)) |
 | [#3]  | [Arquitetura] Matriz de compatibilidade e targets | P1 | 1 | #10, #11 | Bloqueada |
 | [#12] | [NuGet] Política de versionamento e publicação | P1 | 1 | relaciona #9, #8 | Bloqueada |
 | [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | #7, #3 | Bloqueada |
