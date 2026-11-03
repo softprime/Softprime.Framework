@@ -87,14 +87,14 @@ A estratégia completa de testes de caracterização para fixar o comportamento 
 
 ### Síntese executiva da estratégia:
 
-- **Stack padronizada:** `xUnit` (test runner) + `FluentAssertions` (asserções expressivas) + `Moq` (mocks/fakes de contratos) + `SQLite` em memória/arquivo (persistência relacional sem dependência de infraestrutura externa).
+- **Stack planejada:** `xUnit` e suas asserções, fakes manuais (`Moq` opcional) e provedor relacional validado por ORM. SQLite é candidato, não garantia universal. Versões e execução serão verificadas na implementação.
 - **Estrutura enxuta de projetos planejada:**
   - `tests/Softprime.Framework.Core.Tests`: Domínio, Common e DTOs (`net48;net10.0`).
-  - `tests/Softprime.Framework.Data.Tests`: DAL e ORMs (`net48;net10.0`).
-  - `tests/Softprime.Framework.SmokeTests.Net48` e `Net10`: Smoke tests de consumo dos pacotes NuGet reais (`.nupkg`).
+  - `tests/Softprime.Framework.Data.Tests`: DAL e ORMs (`net48;net10.0`), com EFCore5 condicionado ao runtime moderno e fixtures isoladas por ORM.
+  - `tests/Softprime.Framework.SmokeTests.Net48`, `Net10` e `Net8` quando aplicável: consumo dos pacotes NuGet reais (`.nupkg`), com cache isolado e registro do asset selecionado.
 - **Ordem de prioridade de caracterização em 3 etapas:**
-  1. *Etapa 1 (P0 - Crítica):* `EntityWithTypedId` (igualdade, `IsTransient`, hash code estável, hooks de ciclo de vida), `IRepository.Find` (paginação com `out total`, CRUD) e golden tests de criptografia em `Common.Security`.
-  2. *Etapa 2 (P1 - Alta):* Mapeamentos e consultas relacionais dos ORMs (`EFCore3`, `EFCore5`, `EF6`, `NH`).
+  1. *Etapa 1 (P0 - Crítica):* `EntityWithTypedId` (igualdade, `IsTransient`, hash em cache e hooks atualmente sem chamadas nos repositórios), paginação/CRUD e golden tests de criptografia em `Common.Security`. Preservar o `out total` atual, calculado após paginação; sua correção será mudança funcional separada.
+  2. *Etapa 2 (P1 - Alta):* Mapeamentos e consultas relacionais dos ORMs (`EFCore3`, `EFCore5`, `EF6`, `NH`) e extensions selecionadas de `Common`, antes de migrar os respectivos pacotes.
   3. *Etapa 3 (P2 - Média):* DTOs, serialização HTTP e dispatchers de e-mail.
 - **Invariante da Fase 0:** Nenhum projeto de teste foi criado no código-fonte nesta rodada; a criação dos `.csproj` ocorrerá no início da fase de desenvolvimento.
 
