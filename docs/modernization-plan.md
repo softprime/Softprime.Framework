@@ -1,0 +1,190 @@
+# Plano de Modernização — Softprime.Framework
+
+> Documento de **planejamento e gestão de backlog**. Não descreve modernização concluída, e sim o estado atual verificado e o plano para evoluir com segurança. Decisões que dependem de informação ainda inacessível estão marcadas como **Pendente de validação**.
+>
+> Data da auditoria: 2026-11-03 · Branch base: `main` (commit `27ca3c1`).
+
+## Sumário
+
+- [Estado atual verificado](#estado-atual-verificado)
+- [Arquitetura alvo proposta](#arquitetura-alvo-proposta)
+- [Matriz de compatibilidade](#matriz-de-compatibilidade)
+- [Política NuGet](#política-nuget)
+- [Plano de migração (fases e gates)](#plano-de-migração-fases-e-gates)
+- [Backlog de issues](#backlog-de-issues)
+- [Riscos / pendências](#riscos--pendências)
+
+---
+
+## Estado atual verificado
+
+Fatos confirmados por leitura direta do repositório (não inferidos):
+
+- Solution única: `src/Softprime.Framework.All.sln` com **14 projetos de biblioteca** em 5 áreas (general, data, api, mail, multitenant).
+- **Todos** os `.csproj` em `Version=2.0.0`, sem `PackageId` explícito (o id do pacote é o nome do projeto). `GeneratePackageOnBuild=true` em todos.
+- **Não existem:** projetos de teste, `.github/workflows` (CI), `Directory.Build.props`, `Directory.Packages.props`, `nuget.config`, `global.json`, `packages.lock.json`, tags git ou milestones.
+- Metadados NuGet (Authors `Marcelo Paiva`, Company `Softprime`, licença `LICENSE.txt` MIT, ícone `logo-nuget.png`, URLs do GitHub) estão **duplicados** em cada `.csproj`.
+- A dependência `Domain → DAL` existe e é intencional no desenho atual (entidades de domínio referenciam contratos de persistência). Classificar como "a corrigir" exigiria decisão — **não** refatorar agora.
+
+### Matriz factual de projetos (verificada)
+
+| Projeto | Área | Targets atuais | Dependências diretas relevantes | Dependentes internos |
+|---|---|---|---|---|
+| Common | general | `netstandard2.0;netstandard2.1` | `System.ComponentModel.Annotations` 5.0.0 | — (utilitário) |
+| Domain | data | `netstandard2.0;netstandard2.1;net48` | `System.ComponentModel.Annotations` 5.0.0; → DAL | — |
+| DAL | data | `netstandard2.0;netstandard2.1;net48` | (nenhuma externa) | Domain, EFCore3, EFCore5, EF6, NH |
+| EFCore3 | data | `netstandard2.0;netstandard2.1;net48` | `Microsoft.EntityFrameworkCore` 3.1.11; → DAL | — |
+| EFCore5 | data | `netstandard2.1` | `Microsoft.EntityFrameworkCore` 5.0.2; → DAL | — |
+| EF6 | data | `netstandard2.1;net48` | `EntityFramework` 6.4.4; → DAL | — |
+| NH | data | `netstandard2.0;netstandard2.1;net48` | `NHibernate` 5.3.5, `FluentNHibernate` 3.1.0; → DAL | — |
+| Api.Dto | api | `netstandard2.0;netstandard2.1` | (nenhuma externa) | Api, Api.Client |
+| Api | api | `netstandard2.0;netstandard2.1` | `Microsoft.AspNetCore.Mvc` 2.2.0 (+ Abstractions); → Api.Dto | — |
+| Api.Client | api | `netstandard2.0;netstandard2.1` | `Newtonsoft.Json` 12.0.3; → Api.Dto | — |
+| Mailer | mail | `netstandard2.0;netstandard2.1;net48` | `RazorLight` 2.0.0-rc.3 | Mailer.AWS, Mailer.SendGrid |
+| Mailer.AWS | mail | `netstandard2.0;netstandard2.1;net48` | `AWSSDK.SimpleEmailV2` 3.5.1.25; → Mailer | — |
+| Mailer.SendGrid | mail | `netstandard2.0;netstandard2.1;net48` | `SendGrid` 9.22.0; → Mailer | — |
+| Multitenancy | multitenant | `netstandard2.0;netstandard2.1;net48` | `Microsoft.AspNetCore` 2.2.0, `Microsoft.Extensions.Caching.Memory` 5.0.0, `System.ComponentModel.Annotations` 5.0.0 | — |
+
+**Consumidores externos:** desconhecidos neste repositório — ver issue [#10] (`a confirmar`). A coluna "consumidores" e "target recomendado" só será preenchida com rastreabilidade após o inventário.
+
+### Observações factuais relevantes
+
+- A documentação preliminar (`tech.md`) afirmava apenas `netstandard2.0`/`2.1`; a auditoria confirma que **vários projetos também miram `net48`** e que **EFCore5 mira apenas `netstandard2.1`** e **EF6 mira `netstandard2.1;net48`**.
+- `Version=2.0.0` é a versão de **build**; **não** há evidência, neste repositório, do que está efetivamente publicado no feed NuGet. **Pendente de validação** (issue [#10]).
+
+---
+
+## Arquitetura alvo proposta
+
+> **Proposta**, sujeita à aprovação nas issues [#3] e [#12]. Não é estado atual.
+
+- Separar claramente **contratos/utilitários compartilhados** (precisam servir `net48`) de **implementações modernas** (podem ser `net10.0`).
+- `.NET 10` é a referência LTS moderna (GA 2025-11-11, suporte até 2028-11-10).
+- Multi-targeting apenas **com justificativa** por pacote, nunca indiscriminado.
+
+### Invariantes de compatibilidade (fatos, não negociáveis)
+
+1. **`.NET Standard 2.1` NÃO é compatível com `.NET Framework 4.8`.** Para servir `net48`, use `netstandard2.0` ou `net48` explícito.
+2. Um pacote `netstandard2.0;net10.0` atende: `net48` → escolhe `netstandard2.0`; `net10.0` → escolhe `net10.0`; `net8.0` → cai em `netstandard2.0` (não pode usar a variante `net10.0`).
+3. ASP.NET Core moderno (`Microsoft.AspNetCore.App`) **não** é referenciável a partir de `net48`.
+4. **EF6 é linha distinta de EF Core.** Não consolidar nem remover automaticamente.
+
+---
+
+## Matriz de compatibilidade
+
+> Decisão **por pacote** a ser aprovada na issue [#3] após o inventário [#10]. Abaixo, recomendação preliminar **Pendente de validação**.
+
+| Pacote | Papel | Precisa servir `net48`? | Recomendação preliminar de target | Observação |
+|---|---|---|---|---|
+| Common | utilitário compartilhado | Provável (a confirmar) | `netstandard2.0` (+ `net10.0` se usar APIs novas) | depende de #10 |
+| Domain | contrato de domínio | Provável | `netstandard2.0` | — |
+| DAL | contrato de persistência | Provável | `netstandard2.0` | — |
+| Api.Dto | contrato de DTO | Provável | `netstandard2.0` | — |
+| Api.Client | cliente HTTP | A confirmar (`net48` + Newtonsoft) | `netstandard2.0` (+ `net10.0`) | avaliar `System.Text.Json` em #6 |
+| Api | impl. ASP.NET Core | Não (ASP.NET Core moderno) | `net10.0` | migração em #4 |
+| Multitenancy | impl. ASP.NET Core | Não | `net10.0` | migração em #4 |
+| EFCore3 / EFCore5 | impl. legada EF Core | Manter enquanto houver consumidor | preservar | decisão em #5 |
+| EF6 | impl. EF6 (linha própria) | Sim (net48) | preservar | **não** remover (#5) |
+| NH | impl. NHibernate | A confirmar | preservar | decisão em #5 |
+| (novo) EF Core 10 | impl. moderna | Não | `net10.0` | planejar em #5 |
+| Mailer + dispatchers | contrato + mecanismo | A confirmar | avaliar separar contrato do RazorLight | #6 |
+
+---
+
+## Política NuGet
+
+> A definir integralmente na issue [#12]. Princípios propostos (Pendente de validação):
+
+- **SemVer** com critérios objetivos para major/minor/patch; subir **target** não implica automaticamente subir **major**, mas **breaking change** de API sim.
+- **Nunca** sobrescrever uma versão já publicada.
+- Linhas legadas (que servem `net48`) mantidas em paralelo às modernas enquanto houver consumidores.
+- Publicação com **aprovação manual** — sem publish automático neste ciclo (ver [#8]).
+- Centralização de `Version`/metadados em `Directory.Build.props` avaliada em [#9]; Central Package Management (`Directory.Packages.props`) avaliado **à parte**.
+
+---
+
+## Plano de migração (fases e gates)
+
+### Fase 0 — Conhecer e proteger (pré-requisito de qualquer código)
+- [#10] Inventário de consumidores e dependências (P0)
+- [#11] Baseline de APIs públicas e comportamento (P0)
+- [#7] Estratégia de testes / caracterização (P0)
+
+### Fase 1 — Definir e automatizar
+- [#3] Matriz de compatibilidade e estratégia de targets (P1)
+- [#12] Política de versionamento, suporte e publicação (P1)
+- [#8] Planejamento de CI (build/test/pack, sem publish) (P1)
+- [#9] Centralização de metadados / avaliação de CPM (P2)
+
+### Fase 2 — Modernizar seletivamente (só após os gates)
+- [#4] ASP.NET Core / MVC 2.2 → moderno (P1)
+- [#5] Legado EF Core/EF6/NH + implementação EF Core 10 (P1)
+- [#6] Auditoria/atualização de dependências + segurança `Common.Security` (P1)
+
+### Fase 3 — Consolidar e homologar
+- [#13] Atualizar documentação/diretrizes para a arquitetura aprovada (P1)
+- Validação com consumidores, release candidate (prerelease) e **aprovação manual** de publicação.
+
+### Gates obrigatórios antes do primeiro PR de modernização
+- [ ] Inventário auditado e lacunas de consumidores explicitadas ([#10])
+- [ ] Decisão de targets aprovada por pacote ([#3])
+- [ ] Baseline de APIs e estratégia de regressão definidas ([#11], [#7])
+- [ ] Plano para validar consumidores `net48` ([#11])
+- [ ] Regras de versionamento e rollback definidas ([#12])
+
+### Gates antes de release
+- [ ] Build e testes passando nos targets aplicáveis
+- [ ] Testes de integração essenciais + smoke tests de consumo (`net48`, `net10.0`, `net8.0` quando aplicável)
+- [ ] Verificação de compatibilidade pública (API surface)
+- [ ] Avaliação de breaking changes
+- [ ] Pacote prerelease validado
+- [ ] Aprovação manual de publicação
+
+---
+
+## Backlog de issues
+
+| # | Título | Prioridade | Fase | Bloqueada por |
+|---|---|---|---|---|
+| [#10] | [Arquitetura] Inventariar consumidores e dependências | P0 | 0 | — |
+| [#11] | [Qualidade] Baseline de APIs públicas e compatibilidade | P0 | 0 | relaciona #7, #10 |
+| [#7]  | Estratégia de testes / caracterização | P0 | 0 | — |
+| [#3]  | [Arquitetura] Matriz de compatibilidade e targets | P1 | 1 | #10, #11 |
+| [#12] | [NuGet] Política de versionamento e publicação | P1 | 1 | relaciona #9, #8 |
+| [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | #7, #3 |
+| [#9]  | Centralizar metadados / avaliar CPM | P2 | 1 | relaciona #12, #3 |
+| [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | #3, #10, #11 |
+| [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | #3, #10 |
+| [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | #3, #11 |
+| [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | #3, #12 |
+
+### Primeiro lote seguro de execução
+
+Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento/levantamento, não alteram código e destravam todo o resto. Nenhum PR de modernização de código antes de os gates da Fase 0/1 fecharem.
+
+---
+
+## Riscos / pendências
+
+- **Consumidores desconhecidos (Pendente de validação):** sem acesso aos repositórios das aplicações, o mapa de consumidores e os bloqueadores de upgrade são hipóteses até [#10] ser concluída. Não tratar como fato.
+- **Estado publicado no NuGet (Pendente de validação):** `Version=2.0.0` é a de build; o que está no feed não foi verificado aqui.
+- **`Common.Security`:** qualquer mudança de algoritmo precisa preservar a leitura de dados já criptografados; auditar antes de alterar (#6). Não modificar nesta fase.
+- **`net48` + ASP.NET Core moderno:** incompatível; exige decisão sobre manter linha legada vs. descontinuar (#4).
+- **Runners de CI:** targets `net48` exigem runner Windows (#8).
+- **Documentação:** `tech.md` originalmente sugeria `netstandard2.1`/`2.0.0` como padrão para novos projetos — já sinalizado e a corrigir formalmente em [#13].
+
+---
+
+<!-- Links -->
+[#3]: https://github.com/softprime/Softprime.Framework/issues/3
+[#4]: https://github.com/softprime/Softprime.Framework/issues/4
+[#5]: https://github.com/softprime/Softprime.Framework/issues/5
+[#6]: https://github.com/softprime/Softprime.Framework/issues/6
+[#7]: https://github.com/softprime/Softprime.Framework/issues/7
+[#8]: https://github.com/softprime/Softprime.Framework/issues/8
+[#9]: https://github.com/softprime/Softprime.Framework/issues/9
+[#10]: https://github.com/softprime/Softprime.Framework/issues/10
+[#11]: https://github.com/softprime/Softprime.Framework/issues/11
+[#12]: https://github.com/softprime/Softprime.Framework/issues/12
+[#13]: https://github.com/softprime/Softprime.Framework/issues/13
