@@ -1,5 +1,7 @@
 # Stack Tecnológica
 
+> **Nota de planejamento:** esta página descreve o **estado atual verificado** do repositório. A estratégia de modernização (alvos por pacote, versionamento, .NET 10 LTS) está em discussão no backlog e consolidada em [`docs/modernization-plan.md`](../../docs/modernization-plan.md). Enquanto as issues [#3] (targets) e [#12] (versionamento) não forem aprovadas, **não** trate `netstandard2.1` nem `Version 2.0.0` como padrão obrigatório para **novos** projetos — veja a seção "Diretrizes técnicas".
+
 ## Plataforma
 
 - **Linguagem:** C#
@@ -43,6 +45,11 @@ Observações para o ambiente Windows/PowerShell:
 
 ## Diretrizes técnicas
 
-- Novos projetos devem ser SDK-style, seguir o padrão de metadados NuGet dos projetos existentes e manter a versão `2.0.0` alinhada.
-- Ao adicionar dependências, prefira versões pinadas e compatíveis com os alvos `netstandard`.
+- Novos projetos devem ser SDK-style e seguir o padrão de metadados NuGet dos projetos existentes.
+- **Alvos de novos projetos:** decida conforme a matriz de compatibilidade (issue [#3]), não por padrão fixo. Lembre: `netstandard2.1` **não** serve consumidores `.NET Framework 4.8`; use `netstandard2.0` (ou `net48` explícito) para contratos/utilitários que precisam servir o legado, e `net10.0` para implementações exclusivamente modernas.
+- **Versão de pacote:** a definição de versionamento (SemVer, linhas legadas, publicação) está na issue [#12]. Não assuma `2.0.0` como padrão para novos pacotes até a política ser aprovada.
+- Ao adicionar dependências, prefira versões pinadas, estáveis (evite pré-release como o atual `RazorLight` rc) e compatíveis com os alvos escolhidos.
 - Mantenha a separação entre projetos de abstração e projetos de implementação; não adicione dependência de um ORM específico num projeto de contrato.
+
+[#3]: https://github.com/softprime/Softprime.Framework/issues/3
+[#12]: https://github.com/softprime/Softprime.Framework/issues/12
