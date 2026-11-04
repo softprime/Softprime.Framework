@@ -8,6 +8,7 @@
 
 - [Estado atual verificado](#estado-atual-verificado)
 - [Inventário de consumidores e dependências (#10)](#inventário-de-consumidores-e-dependências-10)
+- [Estratégia de testes e baseline comportamental (#7)](#estratégia-de-testes-e-baseline-comportamental-7)
 - [Arquitetura alvo proposta](#arquitetura-alvo-proposta)
 - [Matriz de compatibilidade](#matriz-de-compatibilidade)
 - [Política NuGet](#política-nuget)
@@ -76,6 +77,31 @@ O mapeamento detalhado dos 14 pacotes da solution, suas dependências internas e
 
 ---
 
+## Estratégia de testes e baseline comportamental (#7)
+
+> **Entregável da issue [#7] (Fase 0 — Conhecer e proteger)**.
+
+A estratégia completa de testes de caracterização para fixar o comportamento atual pré-migração está documentada na íntegra no documento dedicado:
+
+👉 **[Estratégia de Testes e Caracterização (`docs/test-strategy.md`)](test-strategy.md)**
+
+### Síntese executiva da estratégia:
+
+- **Framework, asserções e convenção aprovados:** `xUnit` + `Fluent Assertions 7.x`, com testes no padrão Arrange, Act, Assert (AAA). `Moq 4.x` como padrão para mocks de dependências externas; fakes manuais quando mais simples. Usar objetos reais para regras puras e banco de integração para persistência, sem mocks de `DbSet`/`IQueryable`. Fixar versões exatas e verificar execução na implementação. SQL Server e Oracle foram informados como bancos usuais dos consumidores; confirmar combinações de ORM/provider/versões/runtime no inventário. SQLite é apenas complementar.
+- **Estrutura 1:1 aprovada:**
+  - Um projeto `tests/<NomeDaBiblioteca>.Tests/<NomeDaBiblioteca>.Tests.csproj` por biblioteca, criado junto dos primeiros testes relevantes, sem projetos vazios ou declaração automática de cobertura.
+  - Domain, Common, DTOs e cada ORM têm projetos separados, com dependências e fixtures próprias. Contratos de persistência são exercitados nas implementações; `DAL.Tests` será criado quando houver comportamento concreto relevante.
+  - `tests/Softprime.Framework.SmokeTests.Net48`, `Net10` e `Net8` quando aplicável: consumo dos pacotes NuGet reais (`.nupkg`), com cache isolado e registro do asset selecionado.
+- **Matriz de execução aprovada para o planejamento:** `net48;net10.0` como ponto de partida para bibliotecas compartilhadas, com exceções por compatibilidade; EFCore5 somente em runtime moderno. Api/Multitenancy exigem validação legada separada da implementação modernizada. `net8.0` inicialmente nos smoke tests aplicáveis. Compilar e exercitar explicitamente o asset `netstandard2.0`, além de verificar a seleção normal do NuGet. Falhas de compatibilidade serão registradas como bloqueadores, não como execução bem-sucedida.
+- **Ordem de prioridade de caracterização em 3 etapas:**
+  1. *Etapa 1 (P0 - Crítica):* `EntityWithTypedId` (igualdade, `IsTransient`, hash em cache e hooks atualmente sem chamadas nos repositórios), paginação/CRUD e golden tests de criptografia em `Common.Security`. Preservar o `out total` atual, calculado após paginação; sua correção será mudança funcional separada.
+  2. *Etapa 2 (P1 - Alta):* Mapeamentos e consultas relacionais dos ORMs (`EFCore3`, `EFCore5`, `EF6`, `NH`) e extensions selecionadas de `Common`, antes de migrar os respectivos pacotes.
+  3. *Etapa 3 (P2 - Média):* DTOs, serialização HTTP e dispatchers de e-mail.
+- **Invariante da Fase 0:** Nenhum projeto de teste foi criado no código-fonte nesta rodada; a criação dos `.csproj` ocorrerá no início da fase de desenvolvimento.
+- **Caracterização e smoke tests aprovados:** registrar a baseline antes da migração e executar os cenários críticos e o consumo dos `.nupkg` por pacote. Incluir operações representativas de domínio, utilitários, persistência, HTTP, e-mail e hosting conforme aplicabilidade. Não enviar e-mails reais; executar persistência em ambientes de teste isolados SQL Server/Oracle nas combinações confirmadas. Infraestrutura e compatibilidade ainda não verificadas permanecem lacunas explícitas, sem declaração de cobertura.
+
+---
+
 ## Arquitetura alvo proposta
 
 > **Proposta**, sujeita à aprovação nas issues [#3] e [#12]. Não é estado atual.
@@ -131,7 +157,7 @@ O mapeamento detalhado dos 14 pacotes da solution, suas dependências internas e
 ### Fase 0 — Conhecer e proteger (pré-requisito de qualquer código)
 - [#10] Inventário de consumidores e dependências (P0) — *Concluído no planejamento*
 - [#11] Baseline de APIs públicas e comportamento (P0)
-- [#7] Estratégia de testes / caracterização (P0)
+- [#7] Estratégia de testes / caracterização (P0) — *Concluído no planejamento*
 
 ### Fase 1 — Definir e automatizar
 - [#3] Matriz de compatibilidade e estratégia de targets (P1)
@@ -171,7 +197,7 @@ O mapeamento detalhado dos 14 pacotes da solution, suas dependências internas e
 |---|---|---|---|---|---|
 | [#10] | [Arquitetura] Inventariar consumidores e dependências | P0 | 0 | — | Entregue ([docs/package-inventory.md](package-inventory.md)) |
 | [#11] | [Qualidade] Baseline de APIs públicas e compatibilidade | P0 | 0 | relaciona #7, #10 | Pendente de planejamento |
-| [#7]  | Estratégia de testes / caracterização | P0 | 0 | — | Pendente de planejamento |
+| [#7]  | Estratégia de testes / caracterização | P0 | 0 | — | Entregue ([docs/test-strategy.md](test-strategy.md)) |
 | [#3]  | [Arquitetura] Matriz de compatibilidade e targets | P1 | 1 | #10, #11 | Bloqueada |
 | [#12] | [NuGet] Política de versionamento e publicação | P1 | 1 | relaciona #9, #8 | Bloqueada |
 | [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | #7, #3 | Bloqueada |
