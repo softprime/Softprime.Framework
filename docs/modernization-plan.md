@@ -9,6 +9,7 @@
 - [Estado atual verificado](#estado-atual-verificado)
 - [Inventário de consumidores e dependências (#10)](#inventário-de-consumidores-e-dependências-10)
 - [Estratégia de testes e baseline comportamental (#7)](#estratégia-de-testes-e-baseline-comportamental-7)
+- [Baseline de APIs públicas e compatibilidade binária/comportamental (#11)](#baseline-de-apis-públicas-e-compatibilidade-bináriacomportamental-11)
 - [Arquitetura alvo proposta](#arquitetura-alvo-proposta)
 - [Matriz de compatibilidade](#matriz-de-compatibilidade)
 - [Política NuGet](#política-nuget)
@@ -102,6 +103,33 @@ A estratégia completa de testes de caracterização para fixar o comportamento 
 
 ---
 
+## Baseline de APIs públicas e compatibilidade binária/comportamental (#11)
+
+> **Entregável da issue [#11] (Fase 0 — Conhecer e proteger)**.
+
+A especificação completa da baseline de superfícies públicas, critérios de detecção de breaking changes e plano de homologação com consumidores está documentada na íntegra no documento dedicado:
+
+👉 **[Estratégia de Baseline de APIs Públicas e Compatibilidade (`docs/api-baseline-strategy.md`)](api-baseline-strategy.md)**
+
+### Síntese executiva da especificação:
+
+- **Abordagem híbrida de validação aprovada:**
+  - *Camada 1 (Desenvolvimento e Git):* Analisador Roslyn `Microsoft.CodeAnalysis.PublicApiAnalyzers` com arquivos declarativos `PublicAPI.Shipped.txt` (congelando a versão `2.0.0`) e `PublicAPI.Unshipped.txt` (novas APIs). Fornece feedback imediato na compilação local e torna qualquer alteração na superfície pública 100% visível nos diffs de Pull Request no GitHub.
+  - *Camada 2 (Empacotamento e CI):* Recurso nativo do SDK `EnablePackageValidation` com `PackageValidationBaselineVersion = 2.0.0`, validando os binários dos `.nupkg` contra o feed no `dotnet pack` e garantindo paridade entre fatias de multi-targeting (`net48`, `netstandard2.0`, `net10.0`), conforme prática comprovada no `Codout.Framework`.
+- **Critérios objetivos de breaking changes definidos:**
+  - *Quebra Binária:* Remoção/renomeação de tipos ou membros públicos/protegidos, mudança de namespace, alteração de assinaturas, adição de parâmetros (mesmo opcionais, que quebram binários antigos em C# sem recompilação), adição do modificador `sealed` e adição de métodos a interfaces públicas em runtimes sem Default Interface Methods (`net48`/`netstandard2.0`).
+  - *Quebra de Compilação:* Ambiguidade de sobrecargas e renomeação de parâmetros que quebrem invocação com argumentos nomeados.
+  - *Quebra Comportamental:* Proteção mandatória dos 3 pontos críticos identificados: estabilidade de hash e igualdade em `EntityWithTypedId`, preservação da semântica atual do parâmetro `out total` na paginação de `IRepository.Find`, e *golden tests* de criptografia em `Common.Security` para garantir decifragem contínua de dados legados já gravados em produção.
+- **Matriz de targets e testes mínimos de regressão:**
+  - Priorização em 3 etapas alinhada à issue [#7]: Etapa 1 (P0 - Entidades, Criptografia, CRUD), Etapa 2 (P1 - Mapeamentos relacionais de ORMs em SQL Server e Oracle), Etapa 3 (P2 - DTOs, HTTP e e-mail).
+  - Execução nos runtimes `net48` (runner Windows) e `net10.0` (LTS moderna), com smoke tests em `net8.0` quando aplicável.
+  - Invariante da Fase 0 respeitada: nenhuma cobertura de testes é declarada atingida.
+- **Plano de homologação com 2 aplicações-piloto:**
+  - Validação pré-release com 1 aplicação corporativa piloto em `.NET Framework 4.8` (validando o legado de persistência) e 1 aplicação moderna em `.NET 8+` (validando contratos modernos).
+  - Publicação de pacotes pré-lançamento (ex.: `-preview.1` ou `-rc.1`) em feed NuGet interno isolado, com execução de testes de integração e gate de aprovação manual (*sign-off*) antes de qualquer publicação definitiva.
+
+---
+
 ## Arquitetura alvo proposta
 
 > **Proposta**, sujeita à aprovação nas issues [#3] e [#12]. Não é estado atual.
@@ -156,7 +184,7 @@ A estratégia completa de testes de caracterização para fixar o comportamento 
 
 ### Fase 0 — Conhecer e proteger (pré-requisito de qualquer código)
 - [#10] Inventário de consumidores e dependências (P0) — *Concluído no planejamento*
-- [#11] Baseline de APIs públicas e comportamento (P0)
+- [#11] Baseline de APIs públicas e comportamento (P0) — *Concluído no planejamento*
 - [#7] Estratégia de testes / caracterização (P0) — *Concluído no planejamento*
 
 ### Fase 1 — Definir e automatizar
@@ -177,8 +205,8 @@ A estratégia completa de testes de caracterização para fixar o comportamento 
 ### Gates obrigatórios antes do primeiro PR de modernização
 - [x] Inventário auditado e lacunas de consumidores explicitadas ([#10])
 - [ ] Decisão de targets aprovada por pacote ([#3])
-- [ ] Baseline de APIs e estratégia de regressão definidas ([#11], [#7])
-- [ ] Plano para validar consumidores `net48` ([#11])
+- [x] Baseline de APIs e estratégia de regressão definidas ([#11], [#7])
+- [x] Plano para validar consumidores `net48` ([#11])
 - [ ] Regras de versionamento e rollback definidas ([#12])
 
 ### Gates antes de release
@@ -196,7 +224,7 @@ A estratégia completa de testes de caracterização para fixar o comportamento 
 | # | Título | Prioridade | Fase | Bloqueada por | Status / Entregável |
 |---|---|---|---|---|---|
 | [#10] | [Arquitetura] Inventariar consumidores e dependências | P0 | 0 | — | Entregue ([docs/package-inventory.md](package-inventory.md)) |
-| [#11] | [Qualidade] Baseline de APIs públicas e compatibilidade | P0 | 0 | relaciona #7, #10 | Pendente de planejamento |
+| [#11] | [Qualidade] Baseline de APIs públicas e compatibilidade | P0 | 0 | relaciona #7, #10 | Entregue ([docs/api-baseline-strategy.md](api-baseline-strategy.md)) |
 | [#7]  | Estratégia de testes / caracterização | P0 | 0 | — | Entregue ([docs/test-strategy.md](test-strategy.md)) |
 | [#3]  | [Arquitetura] Matriz de compatibilidade e targets | P1 | 1 | #10, #11 | Bloqueada |
 | [#12] | [NuGet] Política de versionamento e publicação | P1 | 1 | relaciona #9, #8 | Bloqueada |
