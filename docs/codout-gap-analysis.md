@@ -83,8 +83,7 @@ Os componentes genuinamente **novos** (Storage, Application, DynamicLinq, Mongo,
 
 ## Issues relacionadas (criadas/comentadas nesta leva)
 
-- **[#22]** — **[Frente A] Expansão de componentes** (issue-mãe; agrupa as sub-issues via sub-issues nativas do GitHub).
-- **[#17]** — [Research] Comparativo Codout × Softprime (esta análise; sub-issue de #22).
+- **[#22]** — **[Frente A] Expansão de componentes** (issue-mãe desta análise; incorporou o antigo #17 de research). Componentes específicos viram sub-issues de #22 conforme a demanda for confirmada.
 - Achados anexados como **comentários** (sem duplicar) em: **[#6]** (security/Mailer), **[#7]** (tests/governança), **[#8]** (CI + package validation), **[#11]** (baseline/package validation), **[#13]** (regra de novos componentes em CONTRIBUTING).
 - Samples relacionados: **[#18]**, **[#19]**, **[#20]**, **[#21]**.
 
@@ -93,7 +92,6 @@ Os componentes genuinamente **novos** (Storage, Application, DynamicLinq, Mongo,
 [#8]: https://github.com/softprime/Softprime.Framework/issues/8
 [#11]: https://github.com/softprime/Softprime.Framework/issues/11
 [#13]: https://github.com/softprime/Softprime.Framework/issues/13
-[#17]: https://github.com/softprime/Softprime.Framework/issues/17
 [#18]: https://github.com/softprime/Softprime.Framework/issues/18
 [#19]: https://github.com/softprime/Softprime.Framework/issues/19
 [#20]: https://github.com/softprime/Softprime.Framework/issues/20
