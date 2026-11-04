@@ -1,6 +1,6 @@
 # Stack Tecnológica
 
-> **Nota de planejamento:** esta página descreve o **estado atual verificado** do repositório. As diretrizes de modernização de targets ([#3]) e a política de versionamento e publicação ([#12]) foram formalizadas e aprovadas em [`docs/target-compatibility-matrix.md`](../../docs/target-compatibility-matrix.md), [`docs/nuget-versioning-policy.md`](../../docs/nuget-versioning-policy.md) e [`docs/modernization-plan.md`](../../docs/modernization-plan.md). Veja a seção "Diretrizes técnicas" para as regras em vigor.
+> **Nota de planejamento:** esta página descreve o **estado atual verificado** do repositório. As diretrizes de modernização de targets ([#3]), a política de versionamento e publicação ([#12]) e a especificação da esteira de CI ([#8]) foram formalizadas e aprovadas em [`docs/target-compatibility-matrix.md`](../../docs/target-compatibility-matrix.md), [`docs/nuget-versioning-policy.md`](../../docs/nuget-versioning-policy.md), [`docs/ci-pipeline-spec.md`](../../docs/ci-pipeline-spec.md) e [`docs/modernization-plan.md`](../../docs/modernization-plan.md). Veja a seção "Diretrizes técnicas" para as regras em vigor.
 
 ## Plataforma
 
@@ -55,8 +55,14 @@ Observações para o ambiente Windows/PowerShell:
   - Distinção entre versão de pacote e target framework: adicionar target retrocompatível é MINOR.
   - **Coexistência de Linhas:** Linha 2.x mantida para correções críticas e segurança de legados em `net48`; modernização segue na linha 3.0.0.
   - **Publicação:** Exclusiva sob aprovação manual com sign-off e regra inviolável de imutabilidade (nunca sobrescrever versões publicadas).
+- **Esteira de Integração Contínua (CI):** Siga a [Especificação da Esteira de CI (`docs/ci-pipeline-spec.md`)](../../docs/ci-pipeline-spec.md) aprovada na issue [#8]:
+  - **Topologia Híbrida:** `windows-latest` obrigatório para compilar a solution completa e rodar testes `net48`; `ubuntu-latest` para preflight, testes modernos (.NET 8/10) e smoke tests de samples.
+  - **Gates de Compatibilidade:** Validação obrigatória de superfícies de API pública via Roslyn `PublicApiAnalyzers` e validação binária de pacotes com `EnablePackageValidation` contra baseline `2.0.0` no pack ([#11], [#17]).
+  - **Validação de Samples (#21):** Compilação de `samples/**` e smoke tests pontuais com SQLite efêmero em arquivo temporário, com auditoria contra vazamento de pacotes.
+  - **Invariante No-Push:** Bloqueio formal de publicação automática de pacotes no CI contínuo; geração estrita de artefatos de compilação temporários (retenção 7 dias).
 - Ao adicionar dependências, prefira versões pinadas, estáveis (evite pré-release como o atual `RazorLight` rc) e compatíveis com os alvos escolhidos.
 - Mantenha a separação entre projetos de abstração e projetos de implementação; não adicione dependência de um ORM específico num projeto de contrato.
 
 [#3]: https://github.com/softprime/Softprime.Framework/issues/3
+[#8]: https://github.com/softprime/Softprime.Framework/issues/8
 [#12]: https://github.com/softprime/Softprime.Framework/issues/12

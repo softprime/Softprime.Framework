@@ -14,6 +14,7 @@
 - [Matriz de compatibilidade](#matriz-de-compatibilidade)
 - [Política NuGet](#política-nuget)
 - [Padronização de metadados e versões (#9)](#padronização-de-metadados-e-versões-9)
+- [CI/CD planejado (#8)](#cicd-planejado-8)
 - [Plano de migração (fases e gates)](#plano-de-migração-fases-e-gates)
 - [Backlog de issues](#backlog-de-issues)
 - [Riscos / pendências](#riscos--pendências)
@@ -274,6 +275,26 @@ Procedimento de verificação:
 
 A implementação futura será considerada validada quando os 14 projetos importarem `src/Directory.Build.props` automaticamente, as propriedades avaliadas forem equivalentes, build e pack passarem nos targets atuais e os pacotes preservarem metadados, dependências e assets conforme as verificações acima. Esta entrega de planejamento não afirma que a migração foi implementada.
 
+---
+
+## CI/CD planejado (#8)
+
+> **Planejamento oficial da esteira de automação aprovado na issue [#8]** (Fase 1 — Definir e automatizar). Documento de especificação detalhada: 👉 **[Especificação da Esteira de Integração Contínua (`docs/ci-pipeline-spec.md`)](ci-pipeline-spec.md)**.
+
+### Síntese executiva da esteira (GitHub Actions):
+- **Topologia Híbrida de Runners:**
+  - `windows-latest`: obrigatório para restauração e compilação da solution completa (`src/Softprime.Framework.All.sln`), garantindo suporte integral aos projetos com target nativo `net48` (`Domain`, `DAL`, `EF6`, `Multitenancy`, `Mailer`, etc.) e execução dos testes sob .NET Framework 4.8.
+  - `ubuntu-latest`: utilizado para preflight (lint/format), testes dos runtimes modernos (`net8.0` e `net10.0`) e compilação/smoke tests dos samples modernos ([#21]), otimizando tempo de fila e consumo de runner minutes.
+- **Gates de Compatibilidade Automatizados:**
+  - Análise de superfície de API pública em tempo de compilação via Roslyn `PublicApiAnalyzers` (erros `RS0016` e `RS0017`).
+  - Validação binária de pacotes e multi-targeting com `EnablePackageValidation=true` contra a baseline `2.0.0` durante o empacotamento ([#17]).
+- **Validação de Samples e Smoke Tests ([#21]):**
+  - Compilação isolada de `samples/**` e execução de testes pontuais com banco SQLite temporário descartável (`sample_smoke.db`).
+  - Auditoria estrita impedindo vazamento de binários ou pacotes de samples para o diretório de distribuição (`artifacts/packages/`).
+- **Política Inviolável de Não-Publicação (No-Push no CI):**
+  - O pipeline de CI **nunca** executa `dotnet nuget push`. Os pacotes `.nupkg` e `.snupkg` são arquivados estritamente como artefatos temporários no GitHub Actions com retenção de 7 dias para download, inspeção e testes locais. Publicação em produção permanece restrita ao workflow manual de release com aprovação formal (*sign-off*) dos mantenedores ([#12]).
+- **Otimização e Concorrência:** Cache global de pacotes NuGet em Windows e Linux, flag `--no-restore` e `--no-build` em estágios subsequentes e cancelamento automático de execuções redundantes em Pull Requests.
+
 
 ---
 
@@ -287,7 +308,7 @@ A implementação futura será considerada validada quando os 14 projetos import
 ### Fase 1 — Definir e automatizar
 - [#3] Matriz de compatibilidade e estratégia de targets (P1) — *Concluído no planejamento*
 - [#12] Política de versionamento, suporte e publicação (P1) — *Concluído no planejamento*
-- [#8] Planejamento de CI (build/test/pack, sem publish) (P1)
+- [#8] Planejamento de CI (build/test/pack, sem publish) (P1) — *Concluído no planejamento*
 - [#9] Centralização de metadados / avaliar CPM (P2) — *Concluído no planejamento*
 
 ### Fase 2 — Modernizar seletivamente (só após os gates)
@@ -305,6 +326,7 @@ A implementação futura será considerada validada quando os 14 projetos import
 - [x] Baseline de APIs e estratégia de regressão definidas ([#11], [#7])
 - [x] Plano para validar consumidores `net48` ([#11])
 - [x] Regras de versionamento e rollback definidas ([#12])
+- [x] Especificação da esteira de CI e matriz de runners documentada ([#8])
 
 ### Gates antes de release
 - [ ] Build e testes passando nos targets aplicáveis
@@ -325,7 +347,7 @@ A implementação futura será considerada validada quando os 14 projetos import
 | [#7]  | Estratégia de testes / caracterização | P0 | 0 | — | Entregue ([docs/test-strategy.md](test-strategy.md)) |
 | [#3]  | [Arquitetura] Matriz de compatibilidade e targets | P1 | 1 | #10, #11 | Entregue ([docs/target-compatibility-matrix.md](target-compatibility-matrix.md)) |
 | [#12] | [NuGet] Política de versionamento e publicação | P1 | 1 | relaciona #9, #8 | Entregue ([docs/nuget-versioning-policy.md](nuget-versioning-policy.md)) |
-| [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | relaciona #7, #3, #12 | Bloqueada |
+| [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | relaciona #7, #3, #12 | Entregue ([docs/ci-pipeline-spec.md](ci-pipeline-spec.md)) |
 | [#9]  | Centralizar metadados / avaliar CPM | P2 | 1 | relaciona #12, #3 | Entregue (Seção "Padronização de metadados e versões") |
 | [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | relaciona #3, #10, #11, #12 | Bloqueada |
 | [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | relaciona #3, #10, #12 | Bloqueada |
@@ -343,7 +365,7 @@ Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento
 - **Consumidores externos e estado do feed NuGet (Pendente de validação):** O inventário factual do repositório foi concluído na issue [#10] em [docs/package-inventory.md](package-inventory.md). As lacunas de repositórios consumidores externos e a listagem de versões reais do feed NuGet corporativo foram formalizadas com status `a confirmar`.
 - **`Common.Security`:** qualquer mudança de algoritmo precisa preservar a leitura de dados já criptografados; auditar antes de alterar (#6). Não modificar nesta fase.
 - **`net48` + ASP.NET Core moderno:** incompatível; exige decisão sobre manter linha legada vs. descontinuar (#4).
-- **Runners de CI:** targets `net48` exigem runner Windows (#8).
+- **Runners de CI:** mitigado e formalizado no planejamento da esteira de CI em [#8] ([docs/ci-pipeline-spec.md](ci-pipeline-spec.md)) com matriz híbrida (`windows-latest` para `net48` e `ubuntu-latest` para runtimes modernos).
 - **Documentação:** `tech.md` originalmente sugeria `netstandard2.1`/`2.0.0` como padrão para novos projetos — já sinalizado e a corrigir formalmente em [#13].
 
 ---
@@ -360,3 +382,5 @@ Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento
 [#11]: https://github.com/softprime/Softprime.Framework/issues/11
 [#12]: https://github.com/softprime/Softprime.Framework/issues/12
 [#13]: https://github.com/softprime/Softprime.Framework/issues/13
+[#17]: https://github.com/softprime/Softprime.Framework/issues/17
+[#21]: https://github.com/softprime/Softprime.Framework/issues/21
