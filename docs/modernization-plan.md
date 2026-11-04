@@ -12,6 +12,7 @@
 - [Arquitetura alvo proposta](#arquitetura-alvo-proposta)
 - [Matriz de compatibilidade](#matriz-de-compatibilidade)
 - [Política NuGet](#política-nuget)
+- [Padronização de metadados e versões (#9)](#padronização-de-metadados-e-versões-9)
 - [Plano de migração (fases e gates)](#plano-de-migração-fases-e-gates)
 - [Backlog de issues](#backlog-de-issues)
 - [Riscos / pendências](#riscos--pendências)
@@ -148,7 +149,70 @@ A estratégia completa de testes de caracterização para fixar o comportamento 
 - **Nunca** sobrescrever uma versão já publicada.
 - Linhas legadas (que servem `net48`) mantidas em paralelo às modernas enquanto houver consumidores.
 - Publicação com **aprovação manual** — sem publish automático neste ciclo (ver [#8]).
-- Centralização de `Version`/metadados em `Directory.Build.props` avaliada em [#9]; Central Package Management (`Directory.Packages.props`) avaliado **à parte**.
+- Centralização de `Version`/metadados em `Directory.Build.props` planejada na seção abaixo, referente à [#9]; Central Package Management (`Directory.Packages.props`) avaliado **à parte**.
+
+---
+
+## Padronização de metadados e versões (#9)
+
+> **Entregável da issue [#9] (Fase 1 — Definir e automatizar)**.
+
+### Especificação proposta (#9 — somente planejamento)
+
+A proposta é criar **`src/Directory.Build.props` em uma implementação futura**, centralizando os metadados comuns dos 14 projetos. Esta issue entrega apenas a especificação e a avaliação de CPM: não cria arquivos de build nem altera `.csproj`.
+
+O arquivo proposto terá um elemento raiz `Project` e um `PropertyGroup` com os seguintes valores, extraídos dos projetos atuais:
+
+| Propriedade | Valor proposto, preservando o atual |
+|---|---|
+| `Authors` | `Marcelo Paiva` |
+| `Company`, `Copyright` | `Softprime` |
+| `PackageProjectUrl`, `RepositoryUrl` | `https://github.com/softprime/Softprime.Framework` |
+| `RepositoryType` | `git` |
+| `PackageTags` | `Softprime;Framework` |
+| `PackageIcon` | `logo-nuget.png` |
+| `PackageLicenseFile` | `LICENSE.txt` |
+| `PackageRequireLicenseAcceptance` | `false` |
+| `GeneratePackageOnBuild` | `true` |
+| `Version` | `2.0.0` |
+
+`Version=2.0.0` apenas registra o valor atual a preservar na migração; não é uma nova política para futuros pacotes nem evidência das versões publicadas no feed. O fluxo de alteração da versão central deve ser coordenado com a [#12]. `PackageId` continuará implícito, derivado do nome de cada projeto.
+
+Na implementação futura, deverão permanecer nos `.csproj`:
+
+- `Description` em português e tags específicas de Mailer, Mailer.AWS e Mailer.SendGrid. As tags específicas substituem o valor comum e preservam também `Softprime;Framework`.
+- `TargetFramework`/`TargetFrameworks`, dependências externas com suas versões e condições, e referências entre projetos.
+- Os itens `None` com `Pack=true` que incluem `../../LICENSE.txt` e o `logo-nuget.png` local na raiz de cada pacote. A proposta não exige mover assets nem mudar o modelo de licença.
+
+Somente as declarações comuns migradas ao props deverão ser removidas dos projetos. `Product`, `PackageIconUrl` e `PackageLicenseExpression` estão vazios; não propagar essas declarações ao arquivo comum. Uma eventual remoção dos campos vazios dos projetos exige conferir a equivalência dos valores efetivos. Manter a licença por arquivo, sem adicionar uma expressão de licença em paralelo a `PackageLicenseFile`.
+
+O MSBuild importa `Directory.Build.props` antes do corpo dos projetos; uma propriedade declarada posteriormente no `.csproj` sobrescreve o valor comum. Assim, as tags específicas dos mailers poderão permanecer nos projetos sem imports manuais. A busca para no primeiro arquivo encontrado ao subir pelos diretórios; futuros props mais próximos precisarão importar explicitamente o arquivo de `src/` se quiserem herdar seus valores. Esse comportamento está descrito na [documentação oficial do MSBuild](https://learn.microsoft.com/en-us/visualstudio/msbuild/customize-by-directory).
+
+A localização em `src/` limita a herança às bibliotecas ali contidas: futuros projetos em `tests/` e `samples/` na raiz não receberão essa configuração. Se um projeto sem finalidade de publicação for criado dentro de `src/`, deverá sobrescrever `IsPackable=false` e `GeneratePackageOnBuild=false` no próprio `.csproj`. Não centralizar targets nesta proposta; a matriz de compatibilidade continua na [#3].
+
+### Decisão separada sobre Central Package Management
+
+**Decisão de planejamento: adiar a adoção de CPM.** A futura centralização de metadados não deverá criar `Directory.Packages.props` nem ativar `ManagePackageVersionsCentrally`; manter as versões das dependências nos projetos. Uma eventual adoção será uma alteração independente.
+
+O inventário atual contém 16 referências diretas a 13 IDs distintos. A repetição com a mesma versão se concentra em `System.ComponentModel.Annotations` 5.0.0 (Common, Domain e Multitenancy). `Microsoft.EntityFrameworkCore` tem duas linhas intencionais: 3.1.11 no EFCore3 e 5.0.2 no EFCore5. Centralizar ingenuamente esse ID em uma única versão alteraria o contrato dos pacotes. As demais dependências diretas aparecem em apenas um projeto cada.
+
+A migração para CPM exigiria criar entradas `PackageVersion`, remover as versões dos `PackageReference` e modelar explicitamente a diferença entre os projetos EFCore3 e EFCore5. Condições apenas por target não resolveriam a distinção, pois ambos publicam `netstandard2.1`. Também seria necessário validar restore, grafo transitivo e dependências dos `.nuspec` em todos os targets. O benefício imediato de reduzir duplicação não justifica ampliar a mudança de metadados para esse trabalho; a matriz de targets e a evolução dos ORMs seguem nas issues [#3] e [#5].
+
+Uma futura adoção deve preservar inicialmente as versões atuais, explicitar as exceções por projeto e comparar os grafos restaurados e os grupos de dependências dos pacotes. Não habilitar transitive pinning incidentalmente: essa opção pode promover dependências transitivas a diretas. A configuração e seus efeitos estão documentados em [Central Package Management — NuGet](https://learn.microsoft.com/en-us/nuget/consume-packages/central-package-management).
+
+### Procedimento proposto para validar a futura implementação
+
+Antes da migração, registrar o commit de referência e manter uma cópia isolada da versão anterior. Construir a referência e a versão alterada com o mesmo SDK, configuração Release, fontes NuGet, versões de dependências e targets. Garantir que a referência não herde o props da versão alterada. Usar pastas de saída distintas e sem pacotes de outras execuções.
+
+Procedimento de verificação:
+
+1. Avaliar os 14 projetos com `dotnet msbuild <projeto> -getProperty:<lista>`, antes e depois: autoria, empresa, produto, descrição, copyright, URLs, tipo de repositório, tags, ícone, licença, aceitação da licença, geração de pacote, `Version`, `PackageVersion`, `PackageId` e targets. Confirmar equivalência, inclusive dos campos vazios removidos.
+2. Executar restore e `dotnet build <solution> -c Release --no-restore` nas duas versões. Executar `dotnet pack <solution> -c Release --no-build --no-restore -o <pasta>` com diretórios de saída distintos para referência e versão alterada. Não publicar os pacotes.
+3. Exigir exatamente os mesmos 14 nomes de pacotes. Abrir os `.nupkg` como ZIP e comparar os `.nuspec` completos como XML, incluindo identidade, versão, descrição, tags, licença, ícone, repositório, grupos de dependências e versões.
+4. Comparar a lista de arquivos `lib/<target>/` para conferir os assets publicados. Exigir `LICENSE.txt` e `logo-nuget.png` na raiz de todos os pacotes e comparar seu conteúdo por SHA-256. Não exigir igualdade binária do ZIP ou das DLLs, pois caminhos e outros dados de build podem variar.
+5. Registrar SDK, commit de referência, comandos, resultados e avisos preexistentes. Falhas de restore/build/pack são bloqueios, não validação aprovada. Guardar logs e pacotes em uma pasta ignorada pelo Git, com resumo revisável na entrega da implementação.
+
+A implementação futura será considerada validada quando os 14 projetos importarem `src/Directory.Build.props` automaticamente, as propriedades avaliadas forem equivalentes, build e pack passarem nos targets atuais e os pacotes preservarem metadados, dependências e assets conforme as verificações acima. Esta entrega de planejamento não afirma que a migração foi implementada.
 
 ---
 
@@ -163,7 +227,7 @@ A estratégia completa de testes de caracterização para fixar o comportamento 
 - [#3] Matriz de compatibilidade e estratégia de targets (P1)
 - [#12] Política de versionamento, suporte e publicação (P1)
 - [#8] Planejamento de CI (build/test/pack, sem publish) (P1)
-- [#9] Centralização de metadados / avaliar CPM (P2)
+- [#9] Centralização de metadados / avaliar CPM (P2) — *Concluído no planejamento*
 
 ### Fase 2 — Modernizar seletivamente (só após os gates)
 - [#4] ASP.NET Core / MVC 2.2 → moderno (P1)
@@ -201,7 +265,7 @@ A estratégia completa de testes de caracterização para fixar o comportamento 
 | [#3]  | [Arquitetura] Matriz de compatibilidade e targets | P1 | 1 | #10, #11 | Bloqueada |
 | [#12] | [NuGet] Política de versionamento e publicação | P1 | 1 | relaciona #9, #8 | Bloqueada |
 | [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | #7, #3 | Bloqueada |
-| [#9]  | Centralizar metadados / avaliar CPM | P2 | 1 | relaciona #12, #3 | Bloqueada |
+| [#9]  | Centralizar metadados / avaliar CPM | P2 | 1 | relaciona #12, #3 | Entregue (Seção "Padronização de metadados e versões") |
 | [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | #3, #10, #11 | Bloqueada |
 | [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | #3, #10 | Bloqueada |
 | [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | #3, #11 | Bloqueada |
