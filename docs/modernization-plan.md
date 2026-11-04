@@ -201,13 +201,14 @@ Dado que 9 dos 14 pacotes da solution (`Domain`, `DAL`, `EFCore3`, `EF6`, `NH`, 
 
 ## Política NuGet
 
-> A definir integralmente na issue [#12]. Princípios propostos (Pendente de validação):
+> **Política oficial aprovada na issue [#12]** (Fase 1 — Definir e automatizar). Documento de especificação detalhada: 👉 **[Política de Versionamento, Suporte e Publicação NuGet (`docs/nuget-versioning-policy.md`)](nuget-versioning-policy.md)**.
 
-- **SemVer** com critérios objetivos para major/minor/patch; subir **target** não implica automaticamente subir **major**, mas **breaking change** de API sim.
-- **Nunca** sobrescrever uma versão já publicada.
-- Linhas legadas (que servem `net48`) mantidas em paralelo às modernas enquanto houver consumidores.
-- Publicação com **aprovação manual** — sem publish automático neste ciclo (ver [#8]).
-- Centralização de `Version`/metadados em `Directory.Build.props` avaliada em [#9]; Central Package Management (`Directory.Packages.props`) avaliado **à parte**.
+- **SemVer 2.0.0 Rigoroso:** Critérios objetivos para MAJOR, MINOR e PATCH vinculados à superfície pública de API ([#11]). Quebra de compatibilidade binária ou comportamental exige major.
+- **Distinção entre Versão de Pacote e Target Framework:** Subir ou adicionar um target (ex.: adicionar `net10.0` a um pacote que mantém `netstandard2.0`) **não** é major, configurando minor, pois consumidores existentes continuam atendidos. Remoção de target sem alternativa compatível exige major.
+- **Imutabilidade Absoluta:** **Nunca** sobrescrever uma versão já publicada no feed corporativo. Versões defeituosas são deslistadas (*unlisted*) ou depreciadas, e a correção é publicada em novo patch (`X.Y.Z+1`).
+- **Coexistência de Linhas Paralelas:** Linha 2.x mantida para correções críticas e segurança de consumidores legados em `.NET Framework 4.8`; modernização avança na linha 3.0.0 (`Api`, `Multitenancy`, `EFCore10`, contratos modernizados).
+- **Publicação com Aprovação Manual:** Sem publish automático contínuo em produção neste ciclo. Publicações estáveis exigem gatilho manual (`workflow_dispatch`), aprovação formal (*sign-off*) e validação prévia com aplicações-piloto (1 legada em `net48` e 1 moderna em `net8/10`).
+- **Centralização de Metadados:** Padronização em `src/Directory.Build.props` planejada na issue [#9]; Central Package Management (`Directory.Packages.props`) adiado para evitar quebras em EFCore3/EFCore5.
 
 ---
 
@@ -220,9 +221,9 @@ Dado que 9 dos 14 pacotes da solution (`Domain`, `DAL`, `EFCore3`, `EF6`, `NH`, 
 
 ### Fase 1 — Definir e automatizar
 - [#3] Matriz de compatibilidade e estratégia de targets (P1) — *Concluído no planejamento*
-- [#12] Política de versionamento, suporte e publicação (P1)
+- [#12] Política de versionamento, suporte e publicação (P1) — *Concluído no planejamento*
 - [#8] Planejamento de CI (build/test/pack, sem publish) (P1)
-- [#9] Centralização de metadados / avaliar CPM (P2)
+- [#9] Centralização de metadados / avaliar CPM (P2) — *Concluído no planejamento*
 
 ### Fase 2 — Modernizar seletivamente (só após os gates)
 - [#4] ASP.NET Core / MVC 2.2 → moderno (P1)
@@ -238,7 +239,7 @@ Dado que 9 dos 14 pacotes da solution (`Domain`, `DAL`, `EFCore3`, `EF6`, `NH`, 
 - [x] Decisão de targets aprovada por pacote ([#3])
 - [x] Baseline de APIs e estratégia de regressão definidas ([#11], [#7])
 - [x] Plano para validar consumidores `net48` ([#11])
-- [ ] Regras de versionamento e rollback definidas ([#12])
+- [x] Regras de versionamento e rollback definidas ([#12])
 
 ### Gates antes de release
 - [ ] Build e testes passando nos targets aplicáveis
@@ -258,12 +259,12 @@ Dado que 9 dos 14 pacotes da solution (`Domain`, `DAL`, `EFCore3`, `EF6`, `NH`, 
 | [#11] | [Qualidade] Baseline de APIs públicas e compatibilidade | P0 | 0 | relaciona #7, #10 | Entregue ([docs/api-baseline-strategy.md](api-baseline-strategy.md)) |
 | [#7]  | Estratégia de testes / caracterização | P0 | 0 | — | Entregue ([docs/test-strategy.md](test-strategy.md)) |
 | [#3]  | [Arquitetura] Matriz de compatibilidade e targets | P1 | 1 | #10, #11 | Entregue ([docs/target-compatibility-matrix.md](target-compatibility-matrix.md)) |
-| [#12] | [NuGet] Política de versionamento e publicação | P1 | 1 | relaciona #9, #8 | Bloqueada |
-| [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | relaciona #7, #3 | Bloqueada |
-| [#9]  | Centralizar metadados / avaliar CPM | P2 | 1 | relaciona #12, #3 | Bloqueada |
-| [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | relaciona #3, #10, #11 | Bloqueada |
-| [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | relaciona #3, #10 | Bloqueada |
-| [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | relaciona #3, #11 | Bloqueada |
+| [#12] | [NuGet] Política de versionamento e publicação | P1 | 1 | relaciona #9, #8 | Entregue ([docs/nuget-versioning-policy.md](nuget-versioning-policy.md)) |
+| [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | relaciona #7, #3, #12 | Bloqueada |
+| [#9]  | Centralizar metadados / avaliar CPM | P2 | 1 | relaciona #12, #3 | Entregue (Seção "Padronização de metadados e versões") |
+| [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | relaciona #3, #10, #11, #12 | Bloqueada |
+| [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | relaciona #3, #10, #12 | Bloqueada |
+| [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | relaciona #3, #11, #12 | Bloqueada |
 | [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | relaciona #3, #12 | Bloqueada |
 
 ### Primeiro lote seguro de execução

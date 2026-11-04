@@ -1,6 +1,6 @@
 # Stack Tecnológica
 
-> **Nota de planejamento:** esta página descreve o **estado atual verificado** do repositório. A estratégia de modernização de targets foi formalizada e aprovada na issue [#3] e detalhada em [`docs/target-compatibility-matrix.md`](../../docs/target-compatibility-matrix.md) e [`docs/modernization-plan.md`](../../docs/modernization-plan.md). Enquanto a issue [#12] (versionamento) não for aprovada, **não** assuma `Version 2.0.0` como padrão obrigatório para **novos** pacotes — veja a seção "Diretrizes técnicas".
+> **Nota de planejamento:** esta página descreve o **estado atual verificado** do repositório. As diretrizes de modernização de targets ([#3]) e a política de versionamento e publicação ([#12]) foram formalizadas e aprovadas em [`docs/target-compatibility-matrix.md`](../../docs/target-compatibility-matrix.md), [`docs/nuget-versioning-policy.md`](../../docs/nuget-versioning-policy.md) e [`docs/modernization-plan.md`](../../docs/modernization-plan.md). Veja a seção "Diretrizes técnicas" para as regras em vigor.
 
 ## Plataforma
 
@@ -50,7 +50,11 @@ Observações para o ambiente Windows/PowerShell:
   - **Contratos e Utilitários Compartilhados:** `netstandard2.0` universal (preservando `net48` nativo onde já existir). `netstandard2.1` **não** deve ser utilizado em novos projetos e será descontinuado nos pacotes compartilhados (não suporta `net48`).
   - **Implementações Web e Modernas:** Multi-target **`net10.0;net8.0`** (usando `<FrameworkReference Include="Microsoft.AspNetCore.App" />`), cobrindo o alvo de modernização primário (.NET 10 LTS) e aplicações corporativas em transição (.NET 8 LTS).
   - **Implementações de Persistência:** Linhas legadas (`EF6`, `EFCore3`, `EFCore5`, `NH`) permanecem preservadas e isoladas; modernização de EF Core ocorre exclusivamente no novo pacote `Softprime.Framework.EFCore10` (`net10.0;net8.0`).
-- **Versão de pacote:** a definição de versionamento (SemVer, linhas legadas, publicação) está na issue [#12]. Não assuma `2.0.0` como padrão para novos pacotes até a política ser aprovada.
+- **Versão e publicação de pacotes:** Siga estritamente a [Política de Versionamento, Suporte e Publicação NuGet](../../docs/nuget-versioning-policy.md) aprovada na issue [#12]:
+  - Adoção de **SemVer 2.0.0** rigoroso com critérios objetivos para MAJOR, MINOR e PATCH vinculados à análise de API surface.
+  - Distinção entre versão de pacote e target framework: adicionar target retrocompatível é MINOR.
+  - **Coexistência de Linhas:** Linha 2.x mantida para correções críticas e segurança de legados em `net48`; modernização segue na linha 3.0.0.
+  - **Publicação:** Exclusiva sob aprovação manual com sign-off e regra inviolável de imutabilidade (nunca sobrescrever versões publicadas).
 - Ao adicionar dependências, prefira versões pinadas, estáveis (evite pré-release como o atual `RazorLight` rc) e compatíveis com os alvos escolhidos.
 - Mantenha a separação entre projetos de abstração e projetos de implementação; não adicione dependência de um ORM específico num projeto de contrato.
 
