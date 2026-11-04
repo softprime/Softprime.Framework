@@ -152,39 +152,50 @@ Dado que 9 dos 14 pacotes da solution (`Domain`, `DAL`, `EFCore3`, `EF6`, `NH`, 
 
 ## Arquitetura alvo proposta
 
-> **Proposta**, sujeita à aprovação nas issues [#3] e [#12]. Não é estado atual.
+> **Decisões arquiteturais aprovadas na issue [#3]** (Fase 1 — Definir e automatizar). Documento de especificação detalhada: 👉 **[Matriz de Compatibilidade e Estratégia de Targets (`docs/target-compatibility-matrix.md`)](target-compatibility-matrix.md)**.
 
-- Separar claramente **contratos/utilitários compartilhados** (precisam servir `net48`) de **implementações modernas** (podem ser `net10.0`).
-- `.NET 10` é a referência LTS moderna (GA 2025-11-11, suporte até 2028-11-10).
-- Multi-targeting apenas **com justificativa** por pacote, nunca indiscriminado.
+- **Separação estrita de papéis:**
+  - **Contratos e Utilitários Compartilhados:** Alvo primário universal em `netstandard2.0`, preservando `net48` nativo nos projetos onde já existe (`Domain`, `DAL`, `Api.Dto`, `Api.Client`). Atendem universalmente a `net48`, `net8.0` e `net10.0`.
+  - **Implementações Web Modernas:** Alvo multi-targeting em `net10.0;net8.0` via `<FrameworkReference Include="Microsoft.AspNetCore.App" />` (`Api`, `Multitenancy`).
+  - **Implementação Moderna de Persistência:** Novo pacote `Softprime.Framework.EFCore10` em `net10.0;net8.0` ([#5]).
+  - **Linhas Legadas Isoladas:** Preservação estrita das linhas de persistência existentes (`EF6`, `EFCore3`, `EFCore5`, `NH`) sem migrações forçadas.
+- **Referência Moderna LTS:** `.NET 10` é a referência moderna LTS primária (GA 2025-11-11, suporte até 2028-11-10).
+- **Transição Corporativa Segura com `.NET 8 LTS`:** Bibliotecas de implementação moderna adotam multi-targeting com `net8.0` (suporte até 2026-11-10) para evitar quebras ou dependência de upgrades prematuros.
+- **Multi-targeting com Justificativa Registrada:** Apenas adotado onde houver incompatibilidade de shared framework ou otimização comprovada. Proibido multi-targeting cosmético ou redundante com `netstandard2.1`.
 
-### Invariantes de compatibilidade (fatos, não negociáveis)
+### Invariantes de compatibilidade (fatos consolidados)
 
-1. **`.NET Standard 2.1` NÃO é compatível com `.NET Framework 4.8`.** Para servir `net48`, use `netstandard2.0` ou `net48` explícito.
-2. Um pacote `netstandard2.0;net10.0` atende: `net48` → escolhe `netstandard2.0`; `net10.0` → escolhe `net10.0`; `net8.0` → cai em `netstandard2.0` (não pode usar a variante `net10.0`).
-3. ASP.NET Core moderno (`Microsoft.AspNetCore.App`) **não** é referenciável a partir de `net48`.
-4. **EF6 é linha distinta de EF Core.** Não consolidar nem remover automaticamente.
+1. **`.NET Standard 2.1` NÃO é compatível com `.NET Framework 4.8`.** Para servir `net48`, os pacotes utilizam `netstandard2.0` ou `net48` explícito. `netstandard2.1` será descontinuado dos pacotes compartilhados na Fase 2 por ser redundante.
+2. **Resolução de pacotes no NuGet:**
+   - Um pacote `netstandard2.0` atende com perfeição `net48`, `net8.0` e `net10.0`.
+   - Um pacote `netstandard2.0;net10.0` permite a `net10.0` usar o asset moderno; consumidores `net8.0` caem com total segurança no asset `netstandard2.0`.
+   - Implementações web modernas exclusivas (`Api`, `Multitenancy`, `EFCore10`) usam `net10.0;net8.0` para cobrir todo o espectro moderno.
+3. **ASP.NET Core moderno (`Microsoft.AspNetCore.App`)** não é referenciável a partir de `net48` nem de `netstandard2.0`. Consumidores web legados em `net48` permanecem atendidos pela linha estável `2.0.0`.
+4. **EF6 é linha distinta de EF Core.** O pacote `Softprime.Framework.EF6` é mantido isolado (`netstandard2.1;net48`).
 
 ---
 
 ## Matriz de compatibilidade
 
-> Decisão **por pacote** a ser aprovada na issue [#3] após o inventário [#10]. Abaixo, recomendação preliminar **Pendente de validação**.
+> **Matriz aprovada por pacote na issue [#3]**. Para detalhes sobre resolução do NuGet, justificativas individuais e diretrizes de CI, consulte 👉 **[docs/target-compatibility-matrix.md](target-compatibility-matrix.md)**.
 
-| Pacote | Papel | Precisa servir `net48`? | Recomendação preliminar de target | Observação |
-|---|---|---|---|---|
-| Common | utilitário compartilhado | Provável (a confirmar) | `netstandard2.0` (+ `net10.0` se usar APIs novas) | depende de #10 |
-| Domain | contrato de domínio | Provável | `netstandard2.0` | — |
-| DAL | contrato de persistência | Provável | `netstandard2.0` | — |
-| Api.Dto | contrato de DTO | Provável | `netstandard2.0` | — |
-| Api.Client | cliente HTTP | A confirmar (`net48` + Newtonsoft) | `netstandard2.0` (+ `net10.0`) | avaliar `System.Text.Json` em #6 |
-| Api | impl. ASP.NET Core | Não (ASP.NET Core moderno) | `net10.0` | migração em #4 |
-| Multitenancy | impl. ASP.NET Core | Não | `net10.0` | migração em #4 |
-| EFCore3 / EFCore5 | impl. legada EF Core | Manter enquanto houver consumidor | preservar | decisão em #5 |
-| EF6 | impl. EF6 (linha própria) | Sim (net48) | preservar | **não** remover (#5) |
-| NH | impl. NHibernate | A confirmar | preservar | decisão em #5 |
-| (novo) EF Core 10 | impl. moderna | Não | `net10.0` | planejar em #5 |
-| Mailer + dispatchers | contrato + mecanismo | A confirmar | avaliar separar contrato do RazorLight | #6 |
+| Pacote (`PackageId`) | Papel Arquitetural | Targets Atuais | Targets Aprovados (Alvo) | Suporte `net48` | Suporte `net8.0` | Adoção .NET 10 | Destino `netstandard2.1` |
+|---|---|---|---|---|---|---|---|
+| `Common` | Utilitário compartilhado | `netstandard2.0;netstandard2.1` | `netstandard2.0` *(+ `net10.0` se justificado em #6)* | Sim (via `netstandard2.0`) | Sim (via `netstandard2.0`) | Sob demanda de otimização | Remover na Fase 2 |
+| `Domain` | Contrato de domínio | `netstandard2.0;netstandard2.1;net48` | `netstandard2.0;net48` | Sim (nativo `net48`) | Sim (via `netstandard2.0`) | Transparente via `netstandard2.0` | Remover na Fase 2 |
+| `DAL` | Contrato de persistência | `netstandard2.0;netstandard2.1;net48` | `netstandard2.0;net48` | Sim (nativo `net48`) | Sim (via `netstandard2.0`) | Transparente via `netstandard2.0` | Remover na Fase 2 |
+| `Api.Dto` | Contrato de DTO | `netstandard2.0;netstandard2.1` | `netstandard2.0` | Sim (via `netstandard2.0`) | Sim (via `netstandard2.0`) | Transparente via `netstandard2.0` | Remover na Fase 2 |
+| `Api.Client` | Cliente HTTP | `netstandard2.0;netstandard2.1` | `netstandard2.0` *(+ `net10.0` em #6)* | Sim (via `netstandard2.0`) | Sim (via `netstandard2.0`) | Alvo na modernização #6 | Remover na Fase 2 |
+| `EF6` | Persistência legada EF6 | `netstandard2.1;net48` | `netstandard2.1;net48` | Sim (nativo `net48`) | Sim (via `netstandard2.1`) | Não se aplica | Manter (linha legada) |
+| `EFCore3` | Persistência legada EF Core 3 | `netstandard2.0;netstandard2.1;net48` | `netstandard2.0;net48` | Sim (nativo `net48`) | Sim (via standard) | Não se aplica | Remover na Fase 2 |
+| `EFCore5` | Persistência legada EF Core 5 | `netstandard2.1` | `netstandard2.1` | Não atende (congelado) | Sim (via `netstandard2.1`) | Não se aplica | Manter (linha legada) |
+| `NH` | Persistência legada NHibernate | `netstandard2.0;netstandard2.1;net48` | `netstandard2.0;net48` | Sim (nativo `net48`) | Sim (via `netstandard2.0`) | Avaliar em #5 | Remover na Fase 2 |
+| `EFCore10` | Persistência moderna (novo) | *(novo pacote)* | **`net10.0;net8.0`** | Não atende (incompatível) | Sim (nativo `net8.0`) | Sim (nativo `net10.0`) | Não se aplica |
+| `Api` | Implementação Web API | `netstandard2.0;netstandard2.1` | **`net10.0;net8.0`** | Não atende (incompatível) | Sim (nativo `net8.0`) | Sim (nativo `net10.0`) | Remover na Fase 2 |
+| `Multitenancy` | Implementação Web Multitenant | `netstandard2.0;netstandard2.1;net48` | **`net10.0;net8.0`** | Não atende (incompatível) | Sim (nativo `net8.0`) | Sim (nativo `net10.0`) | Remover na Fase 2 |
+| `Mailer` | Mensageria / Contrato e Envio | `netstandard2.0;netstandard2.1;net48` | `netstandard2.0;net48` | Sim (nativo `net48`) | Sim (via standard) | Avaliar segregação em #6 | Remover na Fase 2 |
+| `Mailer.AWS` | Sender AWS SES | `netstandard2.0;netstandard2.1;net48` | `netstandard2.0;net48` | Sim (nativo `net48`) | Sim (via standard) | Transparente via SDK | Remover na Fase 2 |
+| `Mailer.SendGrid` | Sender SendGrid | `netstandard2.0;netstandard2.1;net48` | `netstandard2.0;net48` | Sim (nativo `net48`) | Sim (via standard) | Transparente via SDK | Remover na Fase 2 |
 
 ---
 
@@ -208,7 +219,7 @@ Dado que 9 dos 14 pacotes da solution (`Domain`, `DAL`, `EFCore3`, `EF6`, `NH`, 
 - [#7] Estratégia de testes / caracterização (P0) — *Concluído no planejamento*
 
 ### Fase 1 — Definir e automatizar
-- [#3] Matriz de compatibilidade e estratégia de targets (P1)
+- [#3] Matriz de compatibilidade e estratégia de targets (P1) — *Concluído no planejamento*
 - [#12] Política de versionamento, suporte e publicação (P1)
 - [#8] Planejamento de CI (build/test/pack, sem publish) (P1)
 - [#9] Centralização de metadados / avaliar CPM (P2)
@@ -224,7 +235,7 @@ Dado que 9 dos 14 pacotes da solution (`Domain`, `DAL`, `EFCore3`, `EF6`, `NH`, 
 
 ### Gates obrigatórios antes do primeiro PR de modernização
 - [x] Inventário auditado e lacunas de consumidores explicitadas ([#10])
-- [ ] Decisão de targets aprovada por pacote ([#3])
+- [x] Decisão de targets aprovada por pacote ([#3])
 - [x] Baseline de APIs e estratégia de regressão definidas ([#11], [#7])
 - [x] Plano para validar consumidores `net48` ([#11])
 - [ ] Regras de versionamento e rollback definidas ([#12])
@@ -246,14 +257,14 @@ Dado que 9 dos 14 pacotes da solution (`Domain`, `DAL`, `EFCore3`, `EF6`, `NH`, 
 | [#10] | [Arquitetura] Inventariar consumidores e dependências | P0 | 0 | — | Entregue ([docs/package-inventory.md](package-inventory.md)) |
 | [#11] | [Qualidade] Baseline de APIs públicas e compatibilidade | P0 | 0 | relaciona #7, #10 | Entregue ([docs/api-baseline-strategy.md](api-baseline-strategy.md)) |
 | [#7]  | Estratégia de testes / caracterização | P0 | 0 | — | Entregue ([docs/test-strategy.md](test-strategy.md)) |
-| [#3]  | [Arquitetura] Matriz de compatibilidade e targets | P1 | 1 | #10, #11 | Bloqueada |
+| [#3]  | [Arquitetura] Matriz de compatibilidade e targets | P1 | 1 | #10, #11 | Entregue ([docs/target-compatibility-matrix.md](target-compatibility-matrix.md)) |
 | [#12] | [NuGet] Política de versionamento e publicação | P1 | 1 | relaciona #9, #8 | Bloqueada |
-| [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | #7, #3 | Bloqueada |
+| [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | relaciona #7, #3 | Bloqueada |
 | [#9]  | Centralizar metadados / avaliar CPM | P2 | 1 | relaciona #12, #3 | Bloqueada |
-| [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | #3, #10, #11 | Bloqueada |
-| [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | #3, #10 | Bloqueada |
-| [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | #3, #11 | Bloqueada |
-| [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | #3, #12 | Bloqueada |
+| [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | relaciona #3, #10, #11 | Bloqueada |
+| [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | relaciona #3, #10 | Bloqueada |
+| [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | relaciona #3, #11 | Bloqueada |
+| [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | relaciona #3, #12 | Bloqueada |
 
 ### Primeiro lote seguro de execução
 

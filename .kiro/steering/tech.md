@@ -1,6 +1,6 @@
 # Stack Tecnológica
 
-> **Nota de planejamento:** esta página descreve o **estado atual verificado** do repositório. A estratégia de modernização (alvos por pacote, versionamento, .NET 10 LTS) está em discussão no backlog e consolidada em [`docs/modernization-plan.md`](../../docs/modernization-plan.md). Enquanto as issues [#3] (targets) e [#12] (versionamento) não forem aprovadas, **não** trate `netstandard2.1` nem `Version 2.0.0` como padrão obrigatório para **novos** projetos — veja a seção "Diretrizes técnicas".
+> **Nota de planejamento:** esta página descreve o **estado atual verificado** do repositório. A estratégia de modernização de targets foi formalizada e aprovada na issue [#3] e detalhada em [`docs/target-compatibility-matrix.md`](../../docs/target-compatibility-matrix.md) e [`docs/modernization-plan.md`](../../docs/modernization-plan.md). Enquanto a issue [#12] (versionamento) não for aprovada, **não** assuma `Version 2.0.0` como padrão obrigatório para **novos** pacotes — veja a seção "Diretrizes técnicas".
 
 ## Plataforma
 
@@ -46,7 +46,10 @@ Observações para o ambiente Windows/PowerShell:
 ## Diretrizes técnicas
 
 - Novos projetos devem ser SDK-style e seguir o padrão de metadados NuGet dos projetos existentes.
-- **Alvos de novos projetos:** decida conforme a matriz de compatibilidade (issue [#3]), não por padrão fixo. Lembre: `netstandard2.1` **não** serve consumidores `.NET Framework 4.8`; use `netstandard2.0` (ou `net48` explícito) para contratos/utilitários que precisam servir o legado, e `net10.0` para implementações exclusivamente modernas.
+- **Alvos de projetos e pacotes:** Siga estritamente a [Matriz de Compatibilidade e Estratégia de Targets](../../docs/target-compatibility-matrix.md) aprovada na issue [#3]:
+  - **Contratos e Utilitários Compartilhados:** `netstandard2.0` universal (preservando `net48` nativo onde já existir). `netstandard2.1` **não** deve ser utilizado em novos projetos e será descontinuado nos pacotes compartilhados (não suporta `net48`).
+  - **Implementações Web e Modernas:** Multi-target **`net10.0;net8.0`** (usando `<FrameworkReference Include="Microsoft.AspNetCore.App" />`), cobrindo o alvo de modernização primário (.NET 10 LTS) e aplicações corporativas em transição (.NET 8 LTS).
+  - **Implementações de Persistência:** Linhas legadas (`EF6`, `EFCore3`, `EFCore5`, `NH`) permanecem preservadas e isoladas; modernização de EF Core ocorre exclusivamente no novo pacote `Softprime.Framework.EFCore10` (`net10.0;net8.0`).
 - **Versão de pacote:** a definição de versionamento (SemVer, linhas legadas, publicação) está na issue [#12]. Não assuma `2.0.0` como padrão para novos pacotes até a política ser aprovada.
 - Ao adicionar dependências, prefira versões pinadas, estáveis (evite pré-release como o atual `RazorLight` rc) e compatíveis com os alvos escolhidos.
 - Mantenha a separação entre projetos de abstração e projetos de implementação; não adicione dependência de um ORM específico num projeto de contrato.
