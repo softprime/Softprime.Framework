@@ -294,6 +294,30 @@ A implementação futura será considerada validada quando os 14 projetos import
   - O pipeline de CI **nunca** executa `dotnet nuget push`. Os pacotes `.nupkg` e `.snupkg` são arquivados estritamente como artefatos temporários no GitHub Actions com retenção de 7 dias para download, inspeção e testes locais. Publicação em produção permanece restrita ao workflow manual de release com aprovação formal (*sign-off*) dos mantenedores ([#12]).
 - **Otimização e Concorrência:** Cache global de pacotes NuGet em `%userprofile%\.nuget\packages`, flags `--no-restore` e `--no-build` em estágios subsequentes e cancelamento automático de execuções redundantes em Pull Requests.
 
+---
+
+## Auditoria de dependências e segurança (`Common.Security`) (#6)
+
+> **Planejamento oficial de dependências e segurança aprovado na issue [#6]** (Fase 2 — Modernizar seletivamente). Documento de especificação detalhada: 👉 **[Relatório de Auditoria de Dependências e Segurança (`docs/dependency-and-security-audit.md`)](dependency-and-security-audit.md)**.
+
+### Síntese executiva da auditoria:
+- **Correção de Vulnerabilidades Ativas:**
+  - `Newtonsoft.Json 12.0.3` (`Softprime.Framework.Api.Client`): Vulnerabilidade de alta severidade (GHSA-5crp-9r3c-p9vr — DoS por StackOverflow). Correção aprovada: atualização para `Newtonsoft.Json 13.0.3` no target `netstandard2.0` (zero breaking changes para consumidores `net48`).
+  - `NHibernate 5.3.5` (`Softprime.Framework.NH`): Vulnerabilidade de alta severidade (GHSA-fg4q-ccq8-3r5q — RCE/DoS em desserialização). Correção aprovada: atualização para `NHibernate 5.7.1` e `FluentNHibernate 3.5.0` mantendo a linha legada 5.x congelada e segura.
+- **Desacoplamento e Estabilização do Mailer:**
+  - `RazorLight 2.0.0-rc.3` (`Softprime.Framework.Mailer`): Saída do pré-release antigo para a versão estável `RazorLight 2.3.1`.
+  - Desacoplamento arquitetural (achado do comparativo com Codout [#17]/[#22]): introdução da abstração `ITemplateRenderer` para separar o contrato de despacho de e-mails da compilação de templates Razor, viabilizando testes mais simples e novos renderizadores sem acoplamento forçado.
+- **Atualização Seletiva de Pacotes Adicionais:**
+  - `EntityFramework 6.4.4` (`Softprime.Framework.EF6`): Atualização para `EntityFramework 6.5.1` (elimina alerta de biblioteca `Legacy` e habilita compatibilidade moderna).
+  - `AWSSDK.SimpleEmailV2 3.5.1.25`: Atualização para a linha estável madura `3.7.x` LTS.
+  - `SendGrid 9.22.0`: Atualização menor/patch para `SendGrid 9.29.3`.
+- **Invariantes Invioláveis de Segurança e Retrocompatibilidade (`Common.Security`):**
+  - **Preservação de Leitura:** Nenhuma chave, IV ou rotina de descriptografia legada (`CryptoString.Decrypt`, `CryptoFile.DecryptFile`, `SimpleHash.VerifyHash`) será descontinuada ou alterada de forma incompatível. Dados já cifrados em bancos de clientes continuarão 100% legíveis.
+  - **Criptografia Moderna Paralela:** Especificação de `AesCryptoString` (AES-256 com IV dinâmico e chave externa) com detecção automática de formato por prefixo (`$aes$v1$`) no `Decrypt`.
+  - **Rehash Transparente de Senhas no Login:** Especificação de `IPasswordHasher` moderno (Argon2id/PBKDF2). Durante a autenticação, se a senha for válida pelo algoritmo legado do `SimpleHash`, o sistema aciona o rehash transparente em background, atualizando o hash no banco sem exigir ação do usuário final.
+- **Invariante da Fase 2 (Planejamento):**
+  - Nenhuma alteração de código C# ou de arquivos de projeto (`.csproj`) foi realizada nesta rodada; todo o escopo de execução permanece documentado e especificado para os PRs subsequentes da Fase 2.
+
 
 ---
 
@@ -313,7 +337,7 @@ A implementação futura será considerada validada quando os 14 projetos import
 ### Fase 2 — Modernizar seletivamente (só após os gates)
 - [#4] ASP.NET Core / MVC 2.2 → moderno (P1)
 - [#5] Legado EF Core/EF6/NH + implementação EF Core 10 (P1)
-- [#6] Auditoria/atualização de dependências + segurança `Common.Security` (P1)
+- [#6] Auditoria/atualização de dependências + segurança `Common.Security` (P1) — *Concluído no planejamento*
 
 ### Fase 3 — Consolidar e homologar
 - [#13] Atualizar documentação/diretrizes para a arquitetura aprovada (P1)
@@ -350,7 +374,7 @@ A implementação futura será considerada validada quando os 14 projetos import
 | [#9]  | Centralizar metadados / avaliar CPM | P2 | 1 | relaciona #12, #3 | Entregue (Seção "Padronização de metadados e versões") |
 | [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | relaciona #3, #10, #11, #12 | Bloqueada |
 | [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | relaciona #3, #10, #12 | Bloqueada |
-| [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | relaciona #3, #11, #12 | Bloqueada |
+| [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | relaciona #3, #11, #12 | Entregue ([docs/dependency-and-security-audit.md](dependency-and-security-audit.md)) |
 | [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | relaciona #3, #12 | Bloqueada |
 
 ### Primeiro lote seguro de execução
@@ -362,7 +386,7 @@ Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento
 ## Riscos / pendências
 
 - **Consumidores externos e estado do feed NuGet (Pendente de validação):** O inventário factual do repositório foi concluído na issue [#10] em [docs/package-inventory.md](package-inventory.md). As lacunas de repositórios consumidores externos e a listagem de versões reais do feed NuGet corporativo foram formalizadas com status `a confirmar`.
-- **`Common.Security`:** qualquer mudança de algoritmo precisa preservar a leitura de dados já criptografados; auditar antes de alterar (#6). Não modificar nesta fase.
+- **`Common.Security`:** Auditoria concluída na issue [#6] em [docs/dependency-and-security-audit.md](dependency-and-security-audit.md). Formalizado o requisito de retrocompatibilidade de leitura de dados preexistentes e especificado o rehash transparente no login.
 - **`net48` + ASP.NET Core moderno:** incompatível; exige decisão sobre manter linha legada vs. descontinuar (#4).
 - **Runners de CI:** mitigado e formalizado no planejamento da esteira de CI em [#8] ([docs/ci-pipeline-spec.md](ci-pipeline-spec.md)) com topologia unificada 100% Windows (`windows-latest`), garantindo paridade com a produção (IIS/Windows Server) e suporte direto a `net48` e aos runtimes modernos.
 - **Documentação:** `tech.md` originalmente sugeria `netstandard2.1`/`2.0.0` como padrão para novos projetos — já sinalizado e a corrigir formalmente em [#13].
