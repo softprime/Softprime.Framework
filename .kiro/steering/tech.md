@@ -1,6 +1,6 @@
 # Stack Tecnológica
 
-> **Nota de planejamento:** esta página descreve o **estado atual verificado** do repositório. A estratégia de modernização (alvos por pacote, versionamento, .NET 10 LTS) está em discussão no backlog e consolidada em [`docs/modernization-plan.md`](../../docs/modernization-plan.md). Enquanto as issues [#3] (targets) e [#12] (versionamento) não forem aprovadas, **não** trate `netstandard2.1` nem `Version 2.0.0` como padrão obrigatório para **novos** projetos — veja a seção "Diretrizes técnicas".
+> **Nota de planejamento:** esta página descreve o **estado atual verificado** do repositório. As diretrizes de modernização de targets ([#3]), a política de versionamento e publicação ([#12]) e a especificação da esteira de CI ([#8]) foram formalizadas e aprovadas em [`docs/target-compatibility-matrix.md`](../../docs/target-compatibility-matrix.md), [`docs/nuget-versioning-policy.md`](../../docs/nuget-versioning-policy.md), [`docs/ci-pipeline-spec.md`](../../docs/ci-pipeline-spec.md) e [`docs/modernization-plan.md`](../../docs/modernization-plan.md). Veja a seção "Diretrizes técnicas" para as regras em vigor.
 
 ## Plataforma
 
@@ -46,10 +46,23 @@ Observações para o ambiente Windows/PowerShell:
 ## Diretrizes técnicas
 
 - Novos projetos devem ser SDK-style e seguir o padrão de metadados NuGet dos projetos existentes.
-- **Alvos de novos projetos:** decida conforme a matriz de compatibilidade (issue [#3]), não por padrão fixo. Lembre: `netstandard2.1` **não** serve consumidores `.NET Framework 4.8`; use `netstandard2.0` (ou `net48` explícito) para contratos/utilitários que precisam servir o legado, e `net10.0` para implementações exclusivamente modernas.
-- **Versão de pacote:** a definição de versionamento (SemVer, linhas legadas, publicação) está na issue [#12]. Não assuma `2.0.0` como padrão para novos pacotes até a política ser aprovada.
+- **Alvos de projetos e pacotes:** Siga estritamente a [Matriz de Compatibilidade e Estratégia de Targets](../../docs/target-compatibility-matrix.md) aprovada na issue [#3]:
+  - **Contratos e Utilitários Compartilhados:** `netstandard2.0` universal (preservando `net48` nativo onde já existir). `netstandard2.1` **não** deve ser utilizado em novos projetos e será descontinuado nos pacotes compartilhados (não suporta `net48`).
+  - **Implementações Web e Modernas:** Multi-target **`net10.0;net8.0`** (usando `<FrameworkReference Include="Microsoft.AspNetCore.App" />`), cobrindo o alvo de modernização primário (.NET 10 LTS) e aplicações corporativas em transição (.NET 8 LTS).
+  - **Implementações de Persistência:** Linhas legadas (`EF6`, `EFCore3`, `EFCore5`, `NH`) permanecem preservadas e isoladas; modernização de EF Core ocorre exclusivamente no novo pacote `Softprime.Framework.EFCore10` (`net10.0;net8.0`).
+- **Versão e publicação de pacotes:** Siga estritamente a [Política de Versionamento, Suporte e Publicação NuGet](../../docs/nuget-versioning-policy.md) aprovada na issue [#12]:
+  - Adoção de **SemVer 2.0.0** rigoroso com critérios objetivos para MAJOR, MINOR e PATCH vinculados à análise de API surface.
+  - Distinção entre versão de pacote e target framework: adicionar target retrocompatível é MINOR.
+  - **Coexistência de Linhas:** Linha 2.x mantida para correções críticas e segurança de legados em `net48`; modernização segue na linha 3.0.0.
+  - **Publicação:** Exclusiva sob aprovação manual com sign-off e regra inviolável de imutabilidade (nunca sobrescrever versões publicadas).
+- **Esteira de Integração Contínua (CI):** Siga a [Especificação da Esteira de CI (`docs/ci-pipeline-spec.md`)](../../docs/ci-pipeline-spec.md) aprovada na issue [#8]:
+  - **Topologia Padronizada 100% Windows:** `windows-latest` adotado de ponta a ponta com PowerShell Core (`pwsh`), assegurando paridade com o ambiente corporativo (IIS/Windows Server), suporte nativo a `net48` e aos runtimes modernos (.NET 8/10) sem falsos positivos de Linux.
+  - **Gates de Compatibilidade:** Validação obrigatória de superfícies de API pública via Roslyn `PublicApiAnalyzers` e validação binária de pacotes com `EnablePackageValidation` contra baseline `2.0.0` no pack ([#11], [#17]).
+  - **Validação de Samples (#21):** Compilação de `samples/**` e smoke tests pontuais com SQLite efêmero em arquivo temporário, com auditoria contra vazamento de pacotes.
+  - **Invariante No-Push:** Bloqueio formal de publicação automática de pacotes no CI contínuo; geração estrita de artefatos de compilação temporários (retenção 7 dias).
 - Ao adicionar dependências, prefira versões pinadas, estáveis (evite pré-release como o atual `RazorLight` rc) e compatíveis com os alvos escolhidos.
 - Mantenha a separação entre projetos de abstração e projetos de implementação; não adicione dependência de um ORM específico num projeto de contrato.
 
 [#3]: https://github.com/softprime/Softprime.Framework/issues/3
+[#8]: https://github.com/softprime/Softprime.Framework/issues/8
 [#12]: https://github.com/softprime/Softprime.Framework/issues/12
