@@ -15,6 +15,7 @@
 - [Política NuGet](#política-nuget)
 - [Padronização de metadados e versões (#9)](#padronização-de-metadados-e-versões-9)
 - [CI/CD planejado (#8)](#cicd-planejado-8)
+- [Plano de modernização da camada de dados (#5)](#plano-de-modernização-da-camada-de-dados-5)
 - [Plano de migração (fases e gates)](#plano-de-migração-fases-e-gates)
 - [Backlog de issues](#backlog-de-issues)
 - [Riscos / pendências](#riscos--pendências)
@@ -297,6 +298,29 @@ A implementação futura será considerada validada quando os 14 projetos import
 
 ---
 
+## Plano de modernização da camada de dados (#5)
+
+> **Planejamento oficial da camada de persistência aprovado na issue [#5]** (Fase 2 — Modernizar seletivamente). Documento de especificação detalhada: 👉 **[Plano de Modernização da Camada de Dados (`docs/data-layer-modernization-plan.md`)](data-layer-modernization-plan.md)**.
+
+### Síntese executiva do plano:
+- **Preservação e Manutenção das Linhas Legadas (`EF6`, `NH`, `EFCore3`, `EFCore5`):**
+  - **Não consolidação / Não remoção:** EF6 (6.4.4) e NHibernate (5.3.5) são ecossistemas e tecnologias totalmente independentes de EF Core. Ficam preservadas como linhas ativas no feed corporativo para assegurar o funcionamento dos sistemas legados em `.NET Framework 4.8` com SQL Server e Oracle.
+  - `Softprime.Framework.EFCore3` (3.1.11): Mantido congelado na versão `2.0.0` (com eventuais patches em `2.0.x`). Na Fase 2 de código, remove `netstandard2.1` por redundância, preservando `netstandard2.0;net48`.
+  - `Softprime.Framework.EFCore5` (5.0.2): Permanece congelado na versão `2.0.0` (target exclusivo `netstandard2.1`). Será depreciado no feed corporativo quando os consumidores migrarem para o EF Core moderno.
+- **Implementação da Nova Biblioteca Moderna `Softprime.Framework.EFCore10`:**
+  - Multi-targeting nos alvos modernos **`net10.0;net8.0`** (conforme aprovado na issue [#3]).
+  - Implementa `IRepository<T>` e `IUnitOfWork` sobre o EF Core 10 LTS e EF Core 8 LTS com dependências oficiais (`Microsoft.EntityFrameworkCore` 10.0.0 / 8.0.12).
+  - Versionamento inicial na linha **`3.0.0`** (MAJOR SemVer).
+- **Proteção e Mitigação de Riscos Comportamentais entre Versões de ORM:**
+  - *Tracking & Identity Resolution:* Suporte a `AsNoTrackingWithIdentityResolution()` para consultas somente leitura complexas.
+  - *Anti-patterns Assíncronos:* Eliminação dos wrappers `Task.Run` existentes no `EFRepository` legado em operações de `ChangeTracker` em memória (`DeleteAsync`, `UpdateAsync`).
+  - *Quirk de Paginação:* Preservação do cálculo legado de `out total` nas versões `2.0.x` das bibliotecas legadas; introdução de `Task<PagedResult<T>> FindPagedAsync(...)` na nova biblioteca moderna.
+  - *Operações em Lote:* Adoção de `ExecuteDeleteAsync` e `ExecuteUpdateAsync` diretamente no banco sem carregamento em memória.
+- **Invariante da Fase 2 (Planejamento):**
+  - Nenhuma alteração de código C# ou de arquivos de projeto (`.csproj`) foi realizada nesta rodada; todo o escopo de execução permanece documentado e especificado para os PRs subsequentes da Fase 2.
+
+---
+
 ## Plano de migração (fases e gates)
 
 ### Fase 0 — Conhecer e proteger (pré-requisito de qualquer código)
@@ -312,7 +336,7 @@ A implementação futura será considerada validada quando os 14 projetos import
 
 ### Fase 2 — Modernizar seletivamente (só após os gates)
 - [#4] ASP.NET Core / MVC 2.2 → moderno (P1)
-- [#5] Legado EF Core/EF6/NH + implementação EF Core 10 (P1)
+- [#5] Legado EF Core/EF6/NH + implementação EF Core 10 (P1) — *Concluído no planejamento*
 - [#6] Auditoria/atualização de dependências + segurança `Common.Security` (P1)
 
 ### Fase 3 — Consolidar e homologar
@@ -349,7 +373,7 @@ A implementação futura será considerada validada quando os 14 projetos import
 | [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | relaciona #7, #3, #12 | Entregue ([docs/ci-pipeline-spec.md](ci-pipeline-spec.md)) |
 | [#9]  | Centralizar metadados / avaliar CPM | P2 | 1 | relaciona #12, #3 | Entregue (Seção "Padronização de metadados e versões") |
 | [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | relaciona #3, #10, #11, #12 | Bloqueada |
-| [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | relaciona #3, #10, #12 | Bloqueada |
+| [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | relaciona #3, #10, #12 | Entregue ([docs/data-layer-modernization-plan.md](data-layer-modernization-plan.md)) |
 | [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | relaciona #3, #11, #12 | Bloqueada |
 | [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | relaciona #3, #12 | Bloqueada |
 
@@ -365,6 +389,7 @@ Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento
 - **`Common.Security`:** qualquer mudança de algoritmo precisa preservar a leitura de dados já criptografados; auditar antes de alterar (#6). Não modificar nesta fase.
 - **`net48` + ASP.NET Core moderno:** incompatível; exige decisão sobre manter linha legada vs. descontinuar (#4).
 - **Runners de CI:** mitigado e formalizado no planejamento da esteira de CI em [#8] ([docs/ci-pipeline-spec.md](ci-pipeline-spec.md)) com topologia unificada 100% Windows (`windows-latest`), garantindo paridade com a produção (IIS/Windows Server) e suporte direto a `net48` e aos runtimes modernos.
+- **Persistência legada vs. EF Core moderno:** mitigado e formalizado no planejamento da issue [#5] ([docs/data-layer-modernization-plan.md](data-layer-modernization-plan.md)): EF6 e NHibernate preservados como linhas ativas independentes; EFCore3 e EFCore5 congelados na linha 2.0.0; e novo pacote EFCore10 adotará targets net10.0;net8.0 sem remoções prematuras.
 - **Documentação:** `tech.md` originalmente sugeria `netstandard2.1`/`2.0.0` como padrão para novos projetos — já sinalizado e a corrigir formalmente em [#13].
 
 ---
