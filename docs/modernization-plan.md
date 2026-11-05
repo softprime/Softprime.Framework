@@ -282,9 +282,8 @@ A implementação futura será considerada validada quando os 14 projetos import
 > **Planejamento oficial da esteira de automação aprovado na issue [#8]** (Fase 1 — Definir e automatizar). Documento de especificação detalhada: 👉 **[Especificação da Esteira de Integração Contínua (`docs/ci-pipeline-spec.md`)](ci-pipeline-spec.md)**.
 
 ### Síntese executiva da esteira (GitHub Actions):
-- **Topologia Híbrida de Runners:**
-  - `windows-latest`: obrigatório para restauração e compilação da solution completa (`src/Softprime.Framework.All.sln`), garantindo suporte integral aos projetos com target nativo `net48` (`Domain`, `DAL`, `EF6`, `Multitenancy`, `Mailer`, etc.) e execução dos testes sob .NET Framework 4.8.
-  - `ubuntu-latest`: utilizado para preflight (lint/format), testes dos runtimes modernos (`net8.0` e `net10.0`) e compilação/smoke tests dos samples modernos ([#21]), otimizando tempo de fila e consumo de runner minutes.
+- **Topologia Padronizada 100% Windows (`windows-latest`):**
+  - Todo o parque corporativo da Softprime opera exclusivamente em ambiente Windows (Windows Server e IIS). A esteira adota `windows-latest` de ponta a ponta com PowerShell Core (`pwsh`), garantindo suporte pleno aos alvos nativos `net48` (`Domain`, `DAL`, `EF6`, `Multitenancy`, `Mailer`, etc.), execução dos testes de runtimes modernos (`net8.0` e `net10.0`), compilando e exercitando os samples ([#21]) em ambiente com paridade total com a produção, eliminando custos e falsos positivos de compatibilidade Linux.
 - **Gates de Compatibilidade Automatizados:**
   - Análise de superfície de API pública em tempo de compilação via Roslyn `PublicApiAnalyzers` (erros `RS0016` e `RS0017`).
   - Validação binária de pacotes e multi-targeting com `EnablePackageValidation=true` contra a baseline `2.0.0` durante o empacotamento ([#17]).
@@ -293,7 +292,7 @@ A implementação futura será considerada validada quando os 14 projetos import
   - Auditoria estrita impedindo vazamento de binários ou pacotes de samples para o diretório de distribuição (`artifacts/packages/`).
 - **Política Inviolável de Não-Publicação (No-Push no CI):**
   - O pipeline de CI **nunca** executa `dotnet nuget push`. Os pacotes `.nupkg` e `.snupkg` são arquivados estritamente como artefatos temporários no GitHub Actions com retenção de 7 dias para download, inspeção e testes locais. Publicação em produção permanece restrita ao workflow manual de release com aprovação formal (*sign-off*) dos mantenedores ([#12]).
-- **Otimização e Concorrência:** Cache global de pacotes NuGet em Windows e Linux, flag `--no-restore` e `--no-build` em estágios subsequentes e cancelamento automático de execuções redundantes em Pull Requests.
+- **Otimização e Concorrência:** Cache global de pacotes NuGet em `%userprofile%\.nuget\packages`, flags `--no-restore` e `--no-build` em estágios subsequentes e cancelamento automático de execuções redundantes em Pull Requests.
 
 
 ---
@@ -365,7 +364,7 @@ Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento
 - **Consumidores externos e estado do feed NuGet (Pendente de validação):** O inventário factual do repositório foi concluído na issue [#10] em [docs/package-inventory.md](package-inventory.md). As lacunas de repositórios consumidores externos e a listagem de versões reais do feed NuGet corporativo foram formalizadas com status `a confirmar`.
 - **`Common.Security`:** qualquer mudança de algoritmo precisa preservar a leitura de dados já criptografados; auditar antes de alterar (#6). Não modificar nesta fase.
 - **`net48` + ASP.NET Core moderno:** incompatível; exige decisão sobre manter linha legada vs. descontinuar (#4).
-- **Runners de CI:** mitigado e formalizado no planejamento da esteira de CI em [#8] ([docs/ci-pipeline-spec.md](ci-pipeline-spec.md)) com matriz híbrida (`windows-latest` para `net48` e `ubuntu-latest` para runtimes modernos).
+- **Runners de CI:** mitigado e formalizado no planejamento da esteira de CI em [#8] ([docs/ci-pipeline-spec.md](ci-pipeline-spec.md)) com topologia unificada 100% Windows (`windows-latest`), garantindo paridade com a produção (IIS/Windows Server) e suporte direto a `net48` e aos runtimes modernos.
 - **Documentação:** `tech.md` originalmente sugeria `netstandard2.1`/`2.0.0` como padrão para novos projetos — já sinalizado e a corrigir formalmente em [#13].
 
 ---

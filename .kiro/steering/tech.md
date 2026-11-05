@@ -56,7 +56,7 @@ Observações para o ambiente Windows/PowerShell:
   - **Coexistência de Linhas:** Linha 2.x mantida para correções críticas e segurança de legados em `net48`; modernização segue na linha 3.0.0.
   - **Publicação:** Exclusiva sob aprovação manual com sign-off e regra inviolável de imutabilidade (nunca sobrescrever versões publicadas).
 - **Esteira de Integração Contínua (CI):** Siga a [Especificação da Esteira de CI (`docs/ci-pipeline-spec.md`)](../../docs/ci-pipeline-spec.md) aprovada na issue [#8]:
-  - **Topologia Híbrida:** `windows-latest` obrigatório para compilar a solution completa e rodar testes `net48`; `ubuntu-latest` para preflight, testes modernos (.NET 8/10) e smoke tests de samples.
+  - **Topologia Padronizada 100% Windows:** `windows-latest` adotado de ponta a ponta com PowerShell Core (`pwsh`), assegurando paridade com o ambiente corporativo (IIS/Windows Server), suporte nativo a `net48` e aos runtimes modernos (.NET 8/10) sem falsos positivos de Linux.
   - **Gates de Compatibilidade:** Validação obrigatória de superfícies de API pública via Roslyn `PublicApiAnalyzers` e validação binária de pacotes com `EnablePackageValidation` contra baseline `2.0.0` no pack ([#11], [#17]).
   - **Validação de Samples (#21):** Compilação de `samples/**` e smoke tests pontuais com SQLite efêmero em arquivo temporário, com auditoria contra vazamento de pacotes.
   - **Invariante No-Push:** Bloqueio formal de publicação automática de pacotes no CI contínuo; geração estrita de artefatos de compilação temporários (retenção 7 dias).
