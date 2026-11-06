@@ -351,7 +351,7 @@ A implementação futura será considerada validada quando os 14 projetos import
 | [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | relaciona #3, #10, #11, #12 | Bloqueada |
 | [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | relaciona #3, #10, #12 | Bloqueada |
 | [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | relaciona #3, #11, #12 | Bloqueada |
-| [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | relaciona #3, #12 | Bloqueada |
+| [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | relaciona #3, #12 | Entregue (`README.md`, `.kiro/steering/`, `CONTRIBUTING.md`) |
 
 ### Primeiro lote seguro de execução
 
@@ -365,7 +365,7 @@ Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento
 - **`Common.Security`:** qualquer mudança de algoritmo precisa preservar a leitura de dados já criptografados; auditar antes de alterar (#6). Não modificar nesta fase.
 - **`net48` + ASP.NET Core moderno:** incompatível; exige decisão sobre manter linha legada vs. descontinuar (#4).
 - **Runners de CI:** mitigado e formalizado no planejamento da esteira de CI em [#8] ([docs/ci-pipeline-spec.md](ci-pipeline-spec.md)) com topologia unificada 100% Windows (`windows-latest`), garantindo paridade com a produção (IIS/Windows Server) e suporte direto a `net48` e aos runtimes modernos.
-- **Documentação:** `tech.md` originalmente sugeria `netstandard2.1`/`2.0.0` como padrão para novos projetos — já sinalizado e a corrigir formalmente em [#13].
+- **Documentação:** Resolvido na issue [#13]. As diretrizes em `.kiro/steering/` (`tech.md`, `product.md`, `structure.md`) e `README.md` foram devidamente harmonizadas, eliminando a instrução inadequada de `netstandard2.1`/`2.0.0` para novos projetos e separando o estado atual factual (2.0.0) da arquitetura alvo (SemVer 2.0.0, targets [#3], CI [#8] e governança [#17]/[#22] em `CONTRIBUTING.md`).
 
 ---
 
