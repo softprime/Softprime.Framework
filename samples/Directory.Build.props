@@ -1,0 +1,9 @@
+<Project>
+  <!-- Padrão arquitetural e de isolamento de samples (Issue #18 / #23) -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+</Project>
