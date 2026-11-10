@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
+    <RootNamespace>Softprime.Samples.WebApi</RootNamespace>
+    <AssemblyName>Softprime.Samples.WebApi</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\api\Softprime.Framework.Api\Softprime.Framework.Api.csproj" />
+    <ProjectReference Include="..\..\src\api\Softprime.Framework.Api.Dto\Softprime.Framework.Api.Dto.csproj" />
+  </ItemGroup>
+
+</Project>

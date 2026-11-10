@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
+    <RootNamespace>Softprime.Samples.Domain</RootNamespace>
+    <AssemblyName>Softprime.Samples.Domain</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\data\Softprime.Framework.Domain\Softprime.Framework.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
