@@ -1,0 +1,15 @@
+@model Softprime.Samples.Mailer.ResumoPedidoEmailModel
+<!DOCTYPE html>
+<html lang="pt-BR">
+<body>
+  <h1>Pedido @Model.NumeroPedido confirmado</h1>
+  <p>Cliente: <strong>@Model.NomeCliente</strong></p>
+  <ul>
+  @foreach (var item in Model.Itens)
+  {
+    <li>@item.Quantidade x @item.Descricao — R$ @item.Subtotal.ToString("N2")</li>
+  }
+  </ul>
+  <p><strong>Total: R$ @Model.Total.ToString("N2")</strong></p>
+</body>
+</html>
