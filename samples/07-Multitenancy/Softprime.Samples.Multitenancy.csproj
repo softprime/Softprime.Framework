@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
+    <RootNamespace>Softprime.Samples.Multitenancy</RootNamespace>
+    <AssemblyName>Softprime.Samples.Multitenancy</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\multitenant\Softprime.Framework.Multitenancy\Softprime.Framework.Multitenancy.csproj" />
+  </ItemGroup>
+
+</Project>
