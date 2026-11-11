@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Target net6.0 provisorio para compatibilidade de runtime com Softprime.Framework.EFCore5 (EF Core 5.0.2) ate entrega do EFCore10 (#5) -->
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>Softprime.Samples.DataEFCore</RootNamespace>
+    <AssemblyName>Softprime.Samples.DataEFCore</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Nota: utiliza provisoriamente Softprime.Framework.EFCore5 ate a implementacao do EFCore10 (#5) -->
+    <ProjectReference Include="..\..\src\data\Softprime.Framework.EFCore5\Softprime.Framework.EFCore5.csproj" />
+    <ProjectReference Include="..\..\src\data\Softprime.Framework.Domain\Softprime.Framework.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.17" />
+  </ItemGroup>
+
+</Project>
