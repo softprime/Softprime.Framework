@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+    <RootNamespace>Softprime.Samples.Mailer</RootNamespace>
+    <AssemblyName>Softprime.Samples.Mailer</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\*.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\mail\Softprime.Framework.Mailer\Softprime.Framework.Mailer.csproj" />
+  </ItemGroup>
+
+</Project>
