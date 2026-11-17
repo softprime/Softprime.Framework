@@ -102,3 +102,5 @@ dotnet run --project samples/06-Mailer/Softprime.Samples.Mailer.csproj --framewo
 | `Can't load metadata reference from the entry assembly` | Falta `<PreserveCompilationContext>true</PreserveCompilationContext>` no `.csproj` consumidor do `RazorLight 2.0.0-rc.3`. | Mantenha `<PreserveCompilationContext>true</PreserveCompilationContext>` habilitado em `Softprime.Samples.Mailer.csproj`. |
 | `TemplateNotFoundException` para template válido | Arquivo `.cshtml` não marcado como `EmbeddedResource` ou namespace de `templateRootType` divergente da pasta `Templates`. | Garanta `<EmbeddedResource Include="Templates\*.cshtml" />` e mantenha `TemplateMarker` no namespace `Softprime.Samples.Mailer.Templates`. |
 | `Warning NU5104` no build | Dependência `RazorLight 2.0.0-rc.3` (pré-release) em `Softprime.Framework.Mailer`. | Aviso esperado antes da modernização `#6`; não afeta o funcionamento do sample. |
+
+Compilar exige SDK 10.0.401 (latestPatch); instalar os runtimes executados. Nos projetos multi-target selecione `--framework net10.0` ou `--framework net8.0`. CI e consumo de pacotes dependem do PR #42; execução local não comprova CI verde.
