@@ -18,7 +18,7 @@ Este sample ensina de forma prática como consumir endpoints REST usando as abst
 
 ## 2. Pré-requisitos
 
-- [.NET SDK 10.0](https://dotnet.microsoft.com/) ou [.NET SDK 8.0](https://dotnet.microsoft.com/) instalado.
+- SDK .NET 10.0.401 (latestPatch) instalado para compilaÃ§Ã£o e runtimes dos targets executados.
 - **Autonomia Total:** Nenhuma porta fixa ocupada (usa porta efêmera `0`), nenhuma API externa ou credencial secreta são necessárias.
 
 ---
