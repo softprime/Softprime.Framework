@@ -69,7 +69,7 @@ Seguindo a [Matriz de Compatibilidade aprovada na Issue #3](target-compatibility
 |---|---|---|---|---|---|
 | **01-Common** | `Softprime.Samples.Common` | `net10.0;net8.0` | Nenhuma (Console App) | Execução local isolada | [#3] |
 | **02-Domain** | `Softprime.Samples.Domain` | `net10.0;net8.0` | Nenhuma (Console App) | In-memory | [#3] |
-| **03-Data-EFCore** | `Softprime.Samples.DataEFCore` | `net10.0;net8.0` | SQLite Local (`%TEMP%`) | Banco efêmero descartável | [#3], [#5] |
+| **03-Data-EFCore** | `Softprime.Samples.DataEFCore` | `net6.0` provisório; alvo futuro `net10.0;net8.0` | SQLite Local (`%TEMP%`) | Banco efêmero descartável | [#3], [#5] |
 | **04-WebApi** | `Softprime.Samples.WebApi` | `net10.0;net8.0` | Web API / Kestrel local | In-memory / SQLite | [#3], [#4] |
 | **05-ApiClient** | `Softprime.Samples.ApiClient` | `net10.0;net8.0` | Mock HTTP / TestServer | In-memory | [#3] |
 | **06-Mailer** | `Softprime.Samples.Mailer` | `net10.0;net8.0` | Nenhuma | `FakeMailerDispatcher` local | [#3], [#6] |
@@ -93,7 +93,7 @@ Seguindo a [Matriz de Compatibilidade aprovada na Issue #3](target-compatibility
 Explicação clara e objetiva (1 a 3 parágrafos) do conceito arquitetural demonstrado e quais classes/interfaces do framework são exercitadas.
 
 ## 2. Pré-requisitos
-- .NET SDK (8.0 LTS ou 10.0 LTS).
+- SDK 10.0.401 (latestPatch) e runtimes executados.
 - Sistema Operacional suportado (Windows / Linux / macOS).
 - Pacotes do framework necessários e versões de referência.
 
@@ -222,3 +222,9 @@ A governança e entrega dos samples estão divididas entre as sub-issues coorden
 [#20]: https://github.com/softprime/Softprime.Framework/issues/20
 [#21]: https://github.com/softprime/Softprime.Framework/issues/21
 [#23]: https://github.com/softprime/Softprime.Framework/issues/23
+
+## SDK e exceção temporária de persistência
+
+`samples/global.json` fixa SDK `10.0.401`, `rollForward: latestPatch` e `allowPrerelease: false`. Compilar exige SDK 10 mesmo para executar net8.0. Instalar também runtimes .NET/ASP.NET Core 8 e 10 conforme os samples.
+
+Sample 03 é exceção temporária: net6.0/EFCore5 exige runtime .NET 6 fora de suporte. Não é recomendação para novos sistemas. Migrá-lo após implementação e validação da persistência moderna, sem alterar produção para viabilizar o exemplo. Após restore, samples executam sem serviços externos.
