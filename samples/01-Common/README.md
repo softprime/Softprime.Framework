@@ -11,7 +11,7 @@ Este sample ensina de forma prática como utilizar os recursos essenciais do `So
 - **Validação Declarativa de Modelos:** Uso de Data Annotations customizadas (`[CpfCnpj]` e validações condicionais como `[RequiredIf]`).
 - **Manipulação de Strings e Texto:** Geração de slugs amigáveis (`SlugHelper`), higienização de strings (`OnlyNumbers`), remoção de acentos (`RemoveAcentos`) e conversão de valores monetários por extenso (`NumberToText`).
 - **Utilitários de Datas:** Extensões semânticas de calendário (`5.DaysAgo()`, `3.DaysFromNow()`, `IsWeekDay()`, `IsWeekEnd()`).
-- **Segurança e Criptografia:** Geração de senhas aleatórias seguras (`RandomPassword`), derivação de hash com salt aleatório (`SimpleHash` SHA-256) e criptografia simétrica reversível de strings (`CryptoString`).
+- **Segurança e Criptografia:** Caracterização das APIs legadas RandomPassword, SimpleHash e CryptoString. Não usar esses exemplos como recomendação de segurança para novos sistemas: SimpleHash não é KDF de senha e CryptoString usa DES com chave fixa; a modernização está planejada na issue #6.
 
 ---
 
