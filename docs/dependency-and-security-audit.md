@@ -18,7 +18,7 @@ Este documento consolida a auditoria completa das dependências externas e dos c
 2. **Dependência em Pré-Release Histórico (`RazorLight`):**
    - `Softprime.Framework.Mailer` utiliza `RazorLight 2.0.0-rc.3` acoplado diretamente em `SoftprimeMailer`. A versão estável candidata é `2.3.1`. O comparativo arquitetural com o Codout ([#17]/[#22]) indica a necessidade de **desacoplar o contrato de envio do mecanismo de templates** através de uma abstração (`ITemplateRenderer`).
 3. **DependÃªncias a revisar:**
-   - `EntityFramework 6.4.4` (`Softprime.Framework.EF6`): Sinalizado como `Legacy` pelo NuGet. Atualização recomendada: `EntityFramework 6.5.1` (adiciona suporte oficial a runtimes modernos preservando total compatibilidade com `net48`).
+   - `EntityFramework 6.4.4` (`Softprime.Framework.EF6`): O status de depreciação não foi comprovado nesta revisão. `EntityFramework 6.5.1` é candidato com assets compatíveis com os targets; regressão comportamental precisa ser validada.
 4. **Fragilidades e Invariantes Criptográficas em `Common.Security`:**
    - `CryptoString`: Cifra DES 56-bit com chave e IV estáticos hardcoded. **Invariante:** `Decrypt(string)` deve permanecer capaz de decifrar payloads antigos. Introdução planejada de `AesCryptoString` com auto-detecção por prefixo de envelope (`$aes$v1$`).
    - `CryptoFile`: P/Invoke Windows-only (`KERNEL32.DLL`), cast incorreto no .NET moderno e carregamento integral de arquivos em memória. **Invariante:** Preservar `DecryptFile` em múltiplos SOs e especificar streaming em chunks de 64KB com AES.
@@ -119,7 +119,7 @@ Softprime.Framework.Common/Security/
 #### 3. `SimpleHash.cs`
 - **Diagnóstico Factual:**
   - Algoritmo: `ComputeHash` executa apenas **uma única iteração** de MD5, SHA1 ou SHA256 sobre `plainText + salt`.
-  - Salt Fraco: Tamanho de salt de 4 a 8 bytes selecionado via System.Random; os bytes são preenchidos por RNGCryptoServiceProvider. O tamanho recomendado por padrões de segurança (OWASP/NIST) é de pelo menos 16 bytes, gerado por CSPRNG.
+  - Salt Fraco: Tamanho de salt de 4 a 8 bytes selecionado via System.Random; os bytes são preenchidos por RNGCryptoServiceProvider.GetNonZeroBytes. O tamanho recomendado por padrões de segurança (OWASP/NIST) é de pelo menos 16 bytes, gerado por CSPRNG.
   - Ausência de KDF (Key Derivation Function): Não há fator de trabalho (iterações, memória, paralelismo). Um hash SHA256 simples pode ser verificado centenas de bilhões de vezes por segundo em GPUs modernas.
   - Formato Serializado: `Base64( HashBytes + SaltBytes )`.
   - **Invariante de Negócio Inviolável:** Milhares de usuários em sistemas de clientes possuem senhas armazenadas neste formato. Quebrar `VerifyHash` impediria o login de todos os usuários corporativos existentes.
@@ -237,7 +237,7 @@ sequenceDiagram
 
 ## 6. Critérios de Aceite da Issue #6 (Verificação)
 
-- [x] **Auditoria de dependências documentada:** Todas as dependências diretas auditadas com versão atual, versão-alvo candidata, vulnerabilidades (CVE/GHSA), compatibilidade de target e riscos catalogados.
+- [x] **Auditoria de dependências documentada:** Dependências do escopo avaliadas documentalmente com versão atual, versão-alvo candidata, vulnerabilidades (CVE/GHSA), compatibilidade de target e riscos catalogados.
 - [x] **Segurança de `Common.Security` mapeada:** Fragilidades de `CryptoString`, `CryptoFile`, `SimpleHash`, `RandomPassword` e `Crypto` explicitadas em relatório técnico.
 - [x] **Requisito inviolável de retrocompatibilidade criptográfica formalizado:** Garantia documentada de que dados legados e senhas existentes continuarão sendo lidos e validados.
 - [x] **Estratégia de Rehash Transparente especificada:** Mecanismo de upgrade contínuo de hash no login desenhado sem fricção para o usuário.
