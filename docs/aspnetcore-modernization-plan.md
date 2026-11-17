@@ -123,7 +123,7 @@ public interface IApi<TDto, in TId> where TDto : IDto<TId>
 #### Análise de Compatibilidade
 
 - **Preservação de `Task<IActionResult>`:**  
-  No ASP.NET Core moderno (.NET 8/10), `IActionResult` continua sendo a abstração fundamental em `Microsoft.AspNetCore.Mvc`. Manter `Task<IActionResult>` garante **100% de compatibilidade binária e de compilação** para todas as classes controladoras existentes que implementam `IApi<TDto, TId>`.
+  No ASP.NET Core moderno (.NET 8/10), `IActionResult` continua sendo a abstração fundamental em `Microsoft.AspNetCore.Mvc`. Manter `Task<IActionResult>` preserva a forma das assinaturas. Compatibilidade binária, de compilação e comportamental exige baseline de API, compilação de aplicações de referência e testes no shared framework moderno; não é garantida apenas pela assinatura.
 - **Avaliação de `ActionResult<T>` / `IResult`:**  
   O padrão `ActionResult<T>` (introduzido no ASP.NET Core 2.1) melhora a inferência de tipos em geradores de documentação OpenAPI/Swagger (evitando decorações manuais com `[ProducesResponseType]`). No entanto, alterar as assinaturas da interface `IApi` para `Task<ActionResult<IEnumerable<TDto>>>` ou `Task<ActionResult<TDto>>` causaria uma **quebra severa de compilação** em todos os controllers que implementam a interface.
 - **Diretriz Aprovada para 3.0.0:**  
