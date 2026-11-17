@@ -17,7 +17,7 @@ Este sample ensina de forma prática como construir e proteger Web APIs seguindo
 
 ## 2. Pré-requisitos
 
-- [.NET SDK 10.0](https://dotnet.microsoft.com/) ou [.NET SDK 8.0](https://dotnet.microsoft.com/) instalado.
+- SDK .NET 10.0.401 (latestPatch) instalado para compilaÃ§Ã£o e runtimes dos targets executados.
 - **Autonomia Total:** Nenhuma porta fixa ocupada (no modo padrão/smoke test usa porta efêmera `0`), nenhum banco de dados externo e nenhuma credencial secreta são necessários.
 
 ---
