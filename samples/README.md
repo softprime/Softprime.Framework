@@ -34,6 +34,32 @@ Cada diretório abaixo é um projeto autocontido focado em um componente ou cen�
 
 ## Como Compilar e Executar os Samples
 
+### Validação completa do CI
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ./samples/validate-ci.ps1
+```
+
+O script compila e executa 13 combinações de sample/runtime com referências a
+projetos e repete as 13 com pacotes NuGet locais: **26 execuções** no total.
+Os samples 01/02/04/05/06/07 rodam em `net10.0` e `net8.0`; o sample 03
+permanece provisoriamente em `net6.0`/EFCore5 até a modernização da persistência.
+
+O modo padrão usa `ProjectReference` para desenvolvimento. Com
+`UseInstalledPackages=true`, os projetos usam `PackageReference` e a versão
+`FrameworkPackageVersion` (padrão `2.0.0`). O script gera uma versão exclusiva
+de validação dos pacotes de produção, restaura em cache vazio e confere nos
+assets e metadados que todos os pacotes Softprime vieram do feed local.
+Dependências externas são restauradas do NuGet.org; após restore, os exemplos
+executam sem serviços externos. Nenhum pacote é publicado.
+
+Os binários e intermediários ficam separados em `bin/projects`, `obj/projects`
+e `bin/packages`, `obj/packages`. O script de smoke tests executa os binários
+Release já compilados; use `-UseInstalledPackages` para testar o segundo modo.
+Os artefatos de validação ficam em `artifacts/samples-ci/<identificador>/`.
+Cada sample tem `IsPackable` avaliado e é empacotado em diretório vazio;
+qualquer `.nupkg` ou `.snupkg` produzido causa falha, independentemente do nome.
+
 ### 1. Compilação da Solution de Samples
 
 ```powershell

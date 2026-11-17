@@ -13,7 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\mail\Softprime.Framework.Mailer\Softprime.Framework.Mailer.csproj" />
+    <ProjectReference Include="..\..\src\mail\Softprime.Framework.Mailer\Softprime.Framework.Mailer.csproj" Condition="'$(UseInstalledPackages)' != 'true'" />
+    <PackageReference Include="Softprime.Framework.Mailer" Version="$(FrameworkPackageVersion)" Condition="'$(UseInstalledPackages)' == 'true'" />
   </ItemGroup>
 
 </Project>

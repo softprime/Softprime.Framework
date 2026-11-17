@@ -8,7 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\data\Softprime.Framework.Domain\Softprime.Framework.Domain.csproj" />
+    <ProjectReference Include="..\..\src\data\Softprime.Framework.Domain\Softprime.Framework.Domain.csproj" Condition="'$(UseInstalledPackages)' != 'true'" />
+    <PackageReference Include="Softprime.Framework.Domain" Version="$(FrameworkPackageVersion)" Condition="'$(UseInstalledPackages)' == 'true'" />
   </ItemGroup>
 
 </Project>

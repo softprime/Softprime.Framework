@@ -10,8 +10,10 @@
 
   <ItemGroup>
     <!-- Nota: utiliza provisoriamente Softprime.Framework.EFCore5 ate a implementacao do EFCore10 (#5) -->
-    <ProjectReference Include="..\..\src\data\Softprime.Framework.EFCore5\Softprime.Framework.EFCore5.csproj" />
-    <ProjectReference Include="..\..\src\data\Softprime.Framework.Domain\Softprime.Framework.Domain.csproj" />
+    <ProjectReference Include="..\..\src\data\Softprime.Framework.EFCore5\Softprime.Framework.EFCore5.csproj" Condition="'$(UseInstalledPackages)' != 'true'" />
+    <PackageReference Include="Softprime.Framework.EFCore5" Version="$(FrameworkPackageVersion)" Condition="'$(UseInstalledPackages)' == 'true'" />
+    <ProjectReference Include="..\..\src\data\Softprime.Framework.Domain\Softprime.Framework.Domain.csproj" Condition="'$(UseInstalledPackages)' != 'true'" />
+    <PackageReference Include="Softprime.Framework.Domain" Version="$(FrameworkPackageVersion)" Condition="'$(UseInstalledPackages)' == 'true'" />
   </ItemGroup>
 
   <ItemGroup>

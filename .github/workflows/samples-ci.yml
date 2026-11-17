@@ -51,26 +51,17 @@ jobs:
           restore-keys: |
             windows-samples-nuget-
 
-      - name: Restore Samples Solution
-        run: dotnet restore samples/Softprime.Framework.Samples.sln
+      - name: Validate project and package consumption (26 smoke tests)
+        run: ./samples/validate-ci.ps1
 
-      - name: Build Samples Solution
-        run: dotnet build samples/Softprime.Framework.Samples.sln -c Release --no-restore
-
-      - name: Execute Samples Smoke Tests (PowerShell)
-        run: ./samples/run-smoke-tests.ps1
-
-      - name: Audit Packaging Isolation (Ensure samples are excluded from pack)
-        run: |
-          Write-Host "[AUDIT] Verificando isolamento de empacotamento dos samples..."
-          $outputDir = "$env:RUNNER_TEMP\audit-pack"
-          dotnet pack samples/Softprime.Framework.Samples.sln -c Release --no-build -o $outputDir
-
-          $samplePackages = Get-ChildItem -Path $outputDir -Filter "*Sample*.nupkg" -ErrorAction SilentlyContinue
-          if ($samplePackages -and $samplePackages.Count -gt 0) {
-            Write-Error "FALHA DE ISOLAMENTO: Pacotes NuGet de samples foram gerados indevidamente:"
-            $samplePackages | ForEach-Object { Write-Error " - $($_.Name)" }
-            exit 1
-          }
-
-          Write-Host "[AUDIT_PASSED] Nenhum pacote de sample foi produzido. IsPackable=false respeitado."
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: samples-validation-${{ github.sha }}
+          path: |
+            artifacts/samples-ci/**/feed/*.nupkg
+            artifacts/samples-ci/**/nuget.config
+            artifacts/samples-ci/**/validation.log
+            samples/**/obj/packages/project.assets.json
+          retention-days: 7

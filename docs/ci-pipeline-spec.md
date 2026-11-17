@@ -443,6 +443,22 @@ jobs:
 
 ## 8. Resumo Operacional para Desenvolvedores
 
+### Validação implementada dos samples (#21)
+
+O workflow dedicado `samples-ci.yml` executa `samples/validate-ci.ps1`.
+São 13 combinações em cada modo de referência (26 execuções): seis samples
+em `net8.0`/`net10.0` e Data-EFCore provisoriamente em `net6.0`.
+O segundo modo consome pacotes locais com versão exclusiva, cache isolado e
+mapeamento de fontes que restringe `Softprime.Framework.*` ao feed gerado.
+Os assets de restore e os metadados do cache são conferidos antes do build.
+A auditoria avalia `IsPackable` de cada sample e rejeita qualquer pacote gerado
+por seu `pack`, sem depender de convenções de nomes. Comandos nativos com exit
+code diferente de zero interrompem a validação. Pacotes de validação e assets
+são guardados por sete dias como artefatos; não há publicação.
+
+O restante do YAML conceitual deste documento continua sendo especificação
+do pipeline de produção, cuja implementação não faz parte da issue #21.
+
 | Situação | Ação / Comportamento do CI |
 |---|---|
 | **Abri um PR alterando apenas `.md` ou documentação** | O CI **não é acionado**, economizando tempo e recursos da esteira. |
