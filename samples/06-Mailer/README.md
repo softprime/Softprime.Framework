@@ -17,7 +17,7 @@ Este sample ensina de forma prática como estruturar o envio de e-mails desacopl
 
 ## 2. Pré-requisitos
 
-- [.NET SDK 10.0](https://dotnet.microsoft.com/) ou [.NET SDK 8.0](https://dotnet.microsoft.com/) instalado.
+- SDK .NET 10.0.401 (latestPatch) instalado para compilaÃ§Ã£o e runtimes dos targets executados.
 - **Autonomia Total:** Nenhuma conta AWS SES, chave SendGrid ou servidor SMTP é necessário. Tudo roda 100% offline em memória.
 
 ---
