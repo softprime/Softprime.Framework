@@ -1,100 +1,117 @@
 # Análise comparativa — Codout.Framework × Softprime.Framework
 
-> Documento de **planejamento (somente leitura/pesquisa)**. Separa **fatos comprovados** (verificados em arquivos/commits) de **recomendações**. Nenhum código foi copiado nesta fase.
->
-> Data da pesquisa: 2026-11-03 · Repositório de referência: [`Codout/Codout.Framework`](https://github.com/Codout/Codout.Framework) (branch `master`).
+> Pesquisa documental da issue [#22]. Revisão: 2026-11-17.
+> Recomendações técnicas para aprovação; nenhuma adoção ou implementação está aprovada por este documento. Nenhum código foi copiado ou executado.
 
-## Proveniência e licença (fato comprovado)
+## Referências e método
 
-- Licença do Codout.Framework: **MIT, Copyright (c) 2017 Codout** — verificado via API de licença do GitHub (`spdx_id: MIT`).
-- Licença do Softprime.Framework: **MIT, Copyright (c) 2021 Softprime** (`src/LICENSE.txt`).
-- **Compatibilidade de licença:** MIT → MIT permite reaproveitar código, desde que o aviso de copyright e a permissão MIT do Codout sejam **preservados/atribuídos** no material reaproveitado. Qualquer incorporação futura de código deve manter a atribuição ao Codout.
-- Observação factual curiosa: o repositório Codout contém `Codout.Multitenancy/Softprime.Multitenancy.csproj` e o README do Codout descreve "Softprime.Multitenancy" como "o build netstandard2.0 de compatibilidade". **Há relação histórica entre os dois projetos** — a confirmar com o mantenedor antes de assumir direção de origem.
+A comparação usa o Codout no commit [`0e746b50697693228bbd36926be3cc8d2d1f457c`][codout] e a `upstream/main` do Softprime no commit [`f732c52`][softprime]. Links de código abaixo são permanentes. Versões mencionadas são declarações nos projetos, não comprovação de publicação no NuGet nem recomendação de atualização automática.
 
-## Estado do Codout (fatos comprovados pela árvore `git/trees?recursive=1`)
+Foram inspecionados árvore, projetos, contratos, implementações selecionadas, testes e histórico público. A existência de testes não demonstra cobertura, correção ou CI verde: não executamos o Codout. Defeitos registrados pelo próprio projeto são identificados como relatos; observações de leitura não são reproduções de falhas.
 
-- **~26 projetos de biblioteca** + **~18 projetos de teste** em `tests/` + um **servidor MCP** (`Codout.Framework.Mcp`).
-- Versões dos pacotes na casa **6.x** (ex.: Domain 6.5.0, maioria 6.4.0).
-- Usa **`net10.0`** (ex.: `Codout.Security.Core` declara `net10.0`; demais herdam de `Directory.Build.props` — vários `.csproj` não declaram `TargetFramework`, confirmando centralização).
-- Usa **`EnablePackageValidation` + `PackageValidationBaselineVersion`** em todos os pacotes inspecionados — validação automática de compatibilidade de API contra a versão publicada.
-- Possui `tests/`, `.github/` (CI), `CHANGELOG.md`, `CONTRIBUTING.md`, `ROADMAP.md`, `CLAUDE.md`.
-- **Não possui pasta `samples/`** (apenas `Codout.Framework.Mcp/docs/ai/mcp/sample-payloads.json`). A arquitetura de samples do Softprime (Frente B) é contribuição original, não cópia.
+## O que vale aproveitar primeiro
 
-## Mapa de componentes (fato comprovado)
+1. **Validação de pacotes e testes de caracterização:** práticas úteis para detectar quebras antes da modernização. Já pertencem a #11/#8 e #7; não exigem novos componentes.
+2. **Separar renderização de templates do envio de e-mail:** referência de arquitetura para #6, preservando os contratos e os consumidores legados do Mailer.
+3. **Resultado explícito de verificação de senha que indique necessidade de rehash:** referência para #6. O consumidor ainda precisa persistir a atualização; a interface não migra automaticamente hashes do Softprime.
+4. **Storage e filtros de grids:** candidatos com benefício plausível, mas sem demanda confirmada. Primeiro identificar aplicação consumidora e avaliar um contrato menor; não abrir implementação agora.
+5. **Application, Mongo, Image e MCP:** manter fora da implementação deste ciclo. Há custo de integração, dependências e semânticas que não se justificam apenas pela existência no Codout.
 
-Projetos do Codout e correspondência no Softprime:
+## Fatos verificados e limites
 
-| Componente Codout | Softprime equivalente | Situação |
-|---|---|---|
-| Domain, Data, Common | Domain, DAL, Common | **Ambos têm** (conceitos equivalentes) |
-| EF, NH | EFCore3/5, EF6, NH | **Ambos têm** |
-| Api, Api.Dto, Api.Client | Api, Api.Dto, Api.Client | **Ambos têm** |
-| Mailer (+AWS, +SendGrid) | Mailer (+AWS, +SendGrid) | **Ambos têm** |
-| Multitenancy | Multitenancy | **Ambos têm** |
-| **Mongo** | — | **Só Codout** |
-| **Application** (CRUD/AppService) | — | **Só Codout** |
-| **DynamicLinq** | — | **Só Codout** |
-| **Storage (+Azure)** | — | **Só Codout** |
-| **Security.Core (+Argon2/Bcrypt/Scrypt)** | Common.Security (Crypto, SimpleHash, RandomPassword) | **Codout mais avançado** |
-| **Mailer.Razor** (template engine separado) | Mailer usa RazorLight embutido | **Abordagem diferente** |
-| **Image.Extensions** | — | **Só Codout** |
-| **Mcp** (servidor MCP p/ agentes) | — | **Só Codout** |
+- O [props central][props] define `net10.0`, metadados, analisadores e SourceLink. Há exceções: [Softprime.Multitenancy][tenant-project] declara `netstandard2.0`. Não se deve generalizar o target para todos os projetos.
+- [DynamicLinq][dynamic-project], [Storage][storage-project], [Mongo][mongo-project] e [Security.Core][security-project], entre os projetos examinados, habilitam Package Validation e declaram baseline. O [MCP][mcp-project] tem versão/ciclo próprios e não declara essas propriedades; removida a generalização anterior de que todos os pacotes as usam.
+- O [workflow de PR/push][ci] contém restore, build, testes e um gate configurado de cobertura. A configuração não comprova o resultado de nenhuma execução. O runner Ubuntu e o percentual do Codout não são escolhas automaticamente aplicáveis ao Softprime Windows/net48.
+- A [árvore fixada][tree] contém projetos de teste em `tests/`, governança e MCP com projeto de teste próprio; não contém diretório raiz `samples/`. Isso só descreve esta revisão, sem provar autoria ou originalidade de exemplos futuros.
+- O [índice de findings][findings] registra defeitos preexistentes em Security, Mongo, DynamicLinq, Application, Mailer, Multitenancy e outros componentes. Esses relatos são motivo para investigação e testes próprios, não para concluir que qualquer pacote é seguro ou pronto para adoção.
 
-## Tabela de lacunas e decisões propostas
+## Matriz de recomendações por componente
 
-> Esforço em faixas: P (≤2 dias), M (3–5 dias), G (1–2 semanas), GG (>2 semanas). Compatibilidade indica o target recomendado **se** o Softprime adotar o componente, respeitando os invariantes do `modernization-plan.md`.
+Prioridade indica ordem de **avaliação**, não compromisso de entrega. Esforço estimado: P = até 2 dias; M = 3–5 dias; G = 1–2 semanas; GG = mais de 2 semanas, para uma primeira adaptação limitada com testes/documentação, após demanda e desenho aprovados. São estimativas sem protótipo; migração de consumidores e homologação podem ampliá-las.
 
-| # | Componente Codout | Evidência | Equivalente Softprime | Lacuna / melhoria concreta | Dependências | Compat. recomendada | Impacto | Risco | Esforço | Prio | Decisão proposta |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | Security.Core + Argon2/Bcrypt/Scrypt | `src/Security/*.csproj`, `net10.0`, DI abstractions | `Common.Security` (hash/cripto utilitários) | Hash de senha moderno com **upgrade incremental/rehash transparente** no login; algoritmos atuais | `Microsoft.Extensions.DependencyInjection.Abstractions`; libs de hash | `net10.0` (impl. moderna) | Alto (segurança) | Médio — **retrocompat. de leitura** de hashes antigos é obrigatória (ver #6) | M–G | **Investigar** (candidato forte; coordenar com #6) |
-| 2 | Storage (+Azure) | `Codout.Framework.Storage.csproj` (abstração), `.Azure` | — | Abstração de storage de arquivos (Azure/S3/FileSystem) plugável | abstração: nenhuma; Azure: SDK Azure Blob | contrato `netstandard2.0`; impl. `net10.0` | Médio | Baixo (novo, isolado) | M | **Adaptar** (contrato próprio + 1 impl.) |
-| 3 | Application (AppService CRUD) | `Codout.Framework.Application.csproj` → AutoMapper 16, DynamicLinq, Domain | — | Serviços de aplicação CRUD genéricos sobre `IRepository<T>` | `AutoMapper`, DI; DynamicLinq | `net10.0` | Médio | Médio (opinativo; AutoMapper é escolha de design) | M | **Investigar** (avaliar se alinha ao estilo Softprime) |
-| 4 | DynamicLinq | `Codout.DynamicLinq.csproj` → `System.Linq.Dynamic.Core` 1.7.1 | — | Filtro/ordenação/paginação/agregação dinâmicos para grids | `System.Linq.Dynamic.Core` | `netstandard2.0` (+ `net10.0`) | Médio | Baixo–Médio (segurança de query dinâmica) | P–M | **Adaptar** (útil p/ APIs de listagem) |
-| 5 | Mongo | `Codout.Framework.Mongo.csproj` | — | Implementação `IRepository`/`IUnitOfWork` para MongoDB | MongoDB.Driver | `net10.0` | Médio | Baixo | M | **Investigar** (só se houver demanda real) |
-| 6 | Mailer.Razor | `Codout.Mailer.Razor.csproj` → `FrameworkReference AspNetCore.App` | `Mailer` usa RazorLight embutido | Separar o **contrato** do mecanismo de template (Razor nativo vs. RazorLight) | ASP.NET Core | impl. `net10.0` (não serve `net48`) | Médio | Médio (muda design do Mailer; alinhado a #6) | M | **Investigar** (casa com "separar contrato do RazorLight" em #6) |
-| 7 | Image.Extensions | `Codout.Image.Extensions.csproj` | — | Extração/manipulação de regiões de imagem | lib de imagem | `net10.0` | Baixo | Baixo | P–M | **Não adotar agora** (nicho; sem demanda declarada) |
-| 8 | Mcp (servidor MCP) | `Codout.Framework.Mcp/` (projeto + testes + sln) | — | Servidor MCP expondo conhecimento do framework a agentes de IA | SDK MCP | `net10.0` | Alto (DX/IA) | Médio (novo domínio) | G–GG | **Investigar** (estratégico; fora do ciclo atual) |
-| 9 | Package Validation (prática) | `EnablePackageValidation` + `PackageValidationBaselineVersion` em todos | — (Softprime não tem) | Gate automático de compatibilidade de API no `pack` | SDK .NET | aplicável a todos | Alto (qualidade) | Baixo | P | **Incorporar** a prática → alimenta **#11** e **#8** |
-| 10 | Estrutura `tests/` + CONTRIBUTING/CHANGELOG/ROADMAP | árvore do repo | — (Softprime não tem) | Convenção de testes por projeto e governança documentada | — | — | Médio | Baixo | P–M | **Incorporar** convenção → alimenta **#7**, **#13** |
+| Componente / evidência | Equivalente ou lacuna no Softprime | Benefício e dependências observadas | Compatibilidade / risco de adaptação | Esforço | Prioridade | Recomendação neste ciclo |
+|---|---|---|---|---|---|---|
+| Package Validation: [projeto][dynamic-project] | Baseline planejada em #11 e CI em #8; não automatizada na main examinada | Detectar incompatibilidade no pack; depende do SDK e de baseline real disponível | Não detecta regressão comportamental; confirmar versão publicada, não presumir que 2.0.0 está no feed | P–M | Alta | **Incorporar** a prática via #11/#8, sem copiar a baseline do Codout |
+| Testes/governança: [árvore][tree], [findings][findings], [CI][ci] | Estratégia em #7; diretrizes propostas na #13/PR #33 | Caracterizar comportamento e registrar defeitos; exemplos de testes por componente | Não importar percentuais, bibliotecas ou severidades sem validar o contexto; regra de testes + docs + sample já rastreada em #13 | M–G | Alta | **Incorporar** as práticas pelas issues existentes |
+| Security: [contrato][hasher], [resultado][verification], [Argon2][argon] | Common.Security possui utilitários legados; falta fluxo próprio de migração de senha | Resultado de rehash e providers separados; DI e bibliotecas de hash | Codout Core declara net10.0; compatibilidade net48 e formatos antigos do Softprime não demonstrada. Findings relata rehash repetido no Argon2 | G | Alta | **Adaptar** o desenho na #6, após caracterização; não portar provider diretamente |
+| Mailer.Razor: [contrato][template], [projeto][razor] | Mailer Softprime acopla RazorLight ao envio | Renderizador substituível permite testes e engines distintas; implementação Codout usa ASP.NET Core e RuntimeCompilation 10.0.3 | Engine moderna não atende net48; preservar contrato legado e avaliar cache/erros com testes próprios | M–G | Alta | **Adaptar** a separação de responsabilidades pela #6 |
+| Storage/Azure: [contrato][storage], [provider][azure-project], [teste][storage-test] | Sem pacote equivalente na solution Softprime | Upload/download/metadados; provider depende de Azure.Storage.Blobs, MimeTypesMap e extensões Microsoft | Herdam net10.0; contrato inclui GetBlobUri/GetSasUriAsync. Abstração para netstandard2.0 exigiria redesenho. Não há implementação produtiva S3/FileSystem evidenciada | M–G | Média | **Investigar** após demanda; não assumir contrato neutro ou adoção de Azure |
+| DynamicLinq: [projeto][dynamic-project], [consulta][dynamic], [testes][dynamic-tests] | Há paginação em DAL/DTOs, sem wrapper equivalente para grids dinâmicos | Filtros/ordenação/agregação com System.Linq.Dynamic.Core 1.7.1 e formato de datasource | Herda net10.0; portabilidade para netstandard2.0 não testada. Avaliar campos permitidos, custo de consultas e isolamento de tenant. Findings relata exceções em overloads e filtro ignorado | M–G | Média | **Investigar**; substitui a recomendação prematura de adaptar imediatamente |
+| Application: [projeto][application-project], [CRUD][application] | Sem AppService genérico equivalente | Reduz CRUD repetido, mas impõe AutoMapper 16.1.1, DynamicLinq, Domain e DTOs compartilhados | Herda net10.0. CRUD mistura Task.Run e commits síncronos; política transacional/autorização precisa ser desenhada para Softprime. Licenças dos terceiros precisam de avaliação própria | G | Baixa | **Investigar** apenas com repetição de casos reais demonstrada |
+| Mongo: [projeto][mongo-project], [UoW][mongo] | DAL existe; não há implementação Mongo na solution | Alternativa documental com MongoDB.Driver 3.9.0 e DI/configuração | Herda net10.0. Semântica de IDs, paginação e transações difere dos ORMs atuais; findings relata repository fora da sessão do UoW e total incorreto. Integração transacional requer validação de topologia/sessão | G–GG | Baixa | **Investigar** somente com consumidor Mongo identificado; risco maior que o indicado antes |
+| Image.Extensions: [projeto][image-project] | Sem componente equivalente | Manipulação de imagem com ImageSharp 3.1.12 e Drawing 2.1.7 | Herda net10.0. Avaliar limites de recursos, formatos e licenças dos terceiros antes de qualquer incorporação | M–G | Baixa | **Não adotar neste ciclo**, sem caso de uso informado |
+| MCP: [projeto][mcp-project] | Não há servidor MCP no Softprime | Exposição de catálogo/recipes incorporados como recursos; SDK ModelContextProtocol 1.1.0 e Hosting/Options | net10.0 e distribuição como ferramenta; exige conteúdo confiável, manutenção e definição dos clientes. Utilidade depende da qualidade da documentação | G–GG | Baixa | **Não adotar neste ciclo**; reavaliar quando houver fluxo de uso definido |
+| Domain/Data/Common, EF/NH, Api/DTO/Client: [árvore][tree], [findings][findings] | Famílias equivalentes já existem nos 14 projetos Softprime | Referência de testes e evolução, sem lacuna que justifique duplicar pacotes | Contratos e comportamento não são intercambiáveis por semelhança de nomes; não migrar targets nem remover ORMs nesta pesquisa | G–GG | Baixa | **Não adotar** substituição em bloco; melhorias específicas pertencem a #4/#5/#6/#7 |
+| Multitenancy: [projeto compatível][tenant-project], [resolver][tenant] | Já existe Softprime.Framework.Multitenancy | Referência de separação entre build moderno e compatível | Nome Softprime.Multitenancy no Codout não prova compatibilidade com Softprime.Framework.Multitenancy; há relato de divergência de chaves de cache | M–G | Média | **Investigar** proveniência; evolução funcional pertence à #4 |
 
-## Relação com o backlog existente (não duplicar)
+Targets nesta tabela descrevem o Codout inspecionado. Se houver adoção futura, aplicar a matriz Softprime aprovada na #3 e a política #12: preservar consumidores legados dos contratos compartilhados; justificar implementações modernas e qualquer transição net8.0/net10.0, sem importar TFMs indiscriminadamente.
 
-Vários achados **reforçam** issues já abertas, e devem ser anexados a elas em vez de gerar issues novas:
+## Proveniência de Multitenancy
 
-- Achado **#9** (Package Validation) → alimenta **#11** (baseline de API) e **#8** (CI). **Comentar nessas issues**, não criar nova.
-- Achado **#1** (Security moderno) → alimenta **#6** (segurança `Common.Security` + retrocompat.). **Comentar em #6.**
-- Achado **#6/tabela** (separar contrato do Mailer) → já previsto em **#6**. **Comentar em #6.**
-- Achado **#10** (tests/governança) → alimenta **#7** (testes) e **#13** (docs/diretrizes).
+**Comprovado:** o [commit Codout de 2020-02-27][tenant-history] adiciona o projeto `Softprime.Multitenancy.csproj`, já com target netstandard2.0 e referências ASP.NET Core 2.x. No Softprime, o [commit de 2021-01-15][softprime-history] contém a área de Multitenancy. Na revisão atual do Codout, a [descrição do projeto][tenant-project] identifica o nome Softprime como build de compatibilidade.
 
-Os componentes genuinamente **novos** (Storage, Application, DynamicLinq, Mongo, Image, MCP) são consolidados em **uma issue de research** (ver backlog em `samples-design.md` e issues criadas nesta execução), com subdivisão futura **somente quando houver demanda**.
+**Observação de leitura:** os dois resolvers têm nomes e fluxo semelhantes: leitura com identificador de contexto e gravação com identificador do tenant ([Codout][tenant], [Softprime][softprime-tenant]). Isso fundamenta comparação técnica; não prova direção de cópia, autorização ou ancestralidade.
 
-## Recomendações (não são decisão aprovada)
+**Não comprovado:** a cronologia de entrada nesses repositórios não estabelece a origem do código, possíveis fontes comuns ou acordos entre mantenedores. Pergunta para confirmação: qual é a origem compartilhada, houve reaproveitamento entre os projetos e quais avisos devem acompanhar os arquivos? Até essa confirmação, não atribuir a autoria de um projeto ao outro nem afirmar equivalência dos pacotes.
 
-1. **Não** adotar componentes em bloco. Priorizar por demanda real: Security moderno (via #6) e a prática de Package Validation (via #11/#8) têm o melhor custo/benefício imediato.
-2. Qualquer reaproveitamento de código do Codout deve **preservar a atribuição MIT** e passar por revisão de proveniência (há relação histórica entre os projetos a esclarecer).
-3. Componentes novos (Storage, Application, DynamicLinq, Mongo, MCP) ficam como **candidatos de research**, cada um exigindo testes + docs + sample antes de virar pacote (regra permanente de novos componentes).
-4. Respeitar os invariantes de target do `modernization-plan.md`: contratos que sirvam `net48` → `netstandard2.0`; implementações modernas → `net10.0`.
+## Licença e requisitos para eventual reaproveitamento
 
-## Pendências / a confirmar
+Os arquivos examinados declaram MIT no [Codout][license] (copyright 2017 Codout) e no [Softprime][softprime-license] (copyright 2021 Softprime). O texto MIT exige preservar o aviso de copyright e de permissão em cópias ou porções substanciais. A licença do Codout fornece uma base para avaliar reaproveitamento, não dispensa conferir a proveniência dos arquivos e as licenças de dependências.
 
-- **Demanda real** por Mongo, Storage, Application, DynamicLinq, Image e MCP — nenhum consumidor declarado neste repositório (liga-se a #10).
-- **Origem/relação** entre `Softprime.Multitenancy` (dentro do repo Codout) e este repositório — confirmar com o mantenedor.
-- Esforços são **faixas estimadas**, não compromissos; dependem das decisões de #3 (targets) e #12 (versionamento).
+Nesta entrega não há código incorporado nem nova dependência. Em entrega futura que reutilize material, registrar origem/commit/arquivos, preservar os avisos e o texto aplicável junto ao material distribuído, inclusive pacotes, e revisar dependências e recursos separadamente. Manter os avisos existentes do Softprime. A dúvida histórica acima permanece explícita; não declarar autorização histórica específica sem evidência.
 
-## Issues relacionadas (criadas/comentadas nesta leva)
+## Encaminhamento sem duplicar backlog
 
-- **[#22]** — **[Frente A] Expansão de componentes** (issue-mãe desta análise; incorporou o antigo #17 de research). Componentes específicos viram sub-issues de #22 conforme a demanda for confirmada.
-- Achados anexados como **comentários** (sem duplicar) em: **[#6]** (security/Mailer), **[#7]** (tests/governança), **[#8]** (CI + package validation), **[#11]** (baseline/package validation), **[#13]** (regra de novos componentes em CONTRIBUTING).
-- Samples relacionados: **[#18]**, **[#19]**, **[#20]**, **[#21]**.
+Os comentários abaixo já existem e foram conferidos nesta revisão. Não serão republicados:
 
-[#6]: https://github.com/softprime/Softprime.Framework/issues/6
-[#7]: https://github.com/softprime/Softprime.Framework/issues/7
-[#8]: https://github.com/softprime/Softprime.Framework/issues/8
-[#11]: https://github.com/softprime/Softprime.Framework/issues/11
-[#13]: https://github.com/softprime/Softprime.Framework/issues/13
-[#18]: https://github.com/softprime/Softprime.Framework/issues/18
-[#19]: https://github.com/softprime/Softprime.Framework/issues/19
-[#20]: https://github.com/softprime/Softprime.Framework/issues/20
-[#21]: https://github.com/softprime/Softprime.Framework/issues/21
+| Assunto | Destino e comentário existente |
+|---|---|
+| Hash/rehash e renderização de templates | [#6 — achado original](https://github.com/softprime/Softprime.Framework/issues/6#issuecomment-6619931999) |
+| Testes de caracterização | [#7 — achado original](https://github.com/softprime/Softprime.Framework/issues/7#issuecomment-6619932911) |
+| Gate de empacotamento | [#8 — achado original](https://github.com/softprime/Softprime.Framework/issues/8#issuecomment-6619932419) |
+| Baseline pública/binária | [#11 — achado original](https://github.com/softprime/Softprime.Framework/issues/11#issuecomment-6619931579) |
+| Governança de novos componentes | [#13 — achado original](https://github.com/softprime/Softprime.Framework/issues/13#issuecomment-6619933319) |
 
+Ressalvas novas de Security/Mailer serão encaminhadas à #6 e a observação de cache à #4. Os achados não autorizam atualizações, correções ou mudanças comportamentais nessa pesquisa. Issues de planejamento encerradas não representam implementação concluída.
+
+## Aprovação e pendências
+
+- Relatório revisado e matriz de recomendações entregues para aprovação do mantenedor; não marcar recomendações como decisões já aprovadas.
+- Demanda por novos componentes **não confirmada**. Nenhuma sub-issue de implementação criada. Para abrir uma: informar consumidor, problema concreto, limites, targets e critérios de teste/documentação/sample.
+- Proveniência histórica de Multitenancy permanece pendente de confirmação; fontes e limites da investigação estão registrados acima.
+- A #22 permanece aberta para aprovação e tratamento dessa pendência. O PR desta revisão não usa fechamento automático.
+- Não houve build, teste de execução, auditoria exaustiva de vulnerabilidades ou homologação de terceiros. Validação desta entrega: fontes, links, consistência das tabelas e diff documental.
+
+[codout]: https://github.com/Codout/Codout.Framework/tree/0e746b50697693228bbd36926be3cc8d2d1f457c
+[tree]: https://github.com/Codout/Codout.Framework/tree/0e746b50697693228bbd36926be3cc8d2d1f457c
+[softprime]: https://github.com/softprime/Softprime.Framework/tree/f732c52afd663a0a082119ae8df6fbe0f7a455cc
 [#22]: https://github.com/softprime/Softprime.Framework/issues/22
+[props]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Directory.Build.props
+[ci]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/.github/workflows/dotnet.yml
+[findings]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/tests/FINDINGS.md
+[dynamic-project]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.DynamicLinq/Codout.DynamicLinq.csproj
+[dynamic]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.DynamicLinq/QueryableExtensions.cs
+[dynamic-tests]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/tests/Codout.DynamicLinq.Tests/FilterAndSortExpressionTests.cs
+[storage-project]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.Framework.Storage/Codout.Framework.Storage.csproj
+[storage]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.Framework.Storage/IStorage.cs
+[azure-project]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.Framework.Storage.Azure/Codout.Framework.Storage.Azure.csproj
+[storage-test]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/tests/Codout.Framework.Storage.Tests/InMemoryStorageContractTests.cs
+[application-project]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.Framework.Application/Codout.Framework.Application.csproj
+[application]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.Framework.Application/CrudAppServiceBase.cs
+[mongo-project]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.Framework.Mongo/Codout.Framework.Mongo.csproj
+[mongo]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.Framework.Mongo/MongoUnitOfWork.cs
+[security-project]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/src/Security/Codout.Security.Core/Codout.Security.Core.csproj
+[hasher]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/src/Security/Codout.Security.Core/IPasswordHasher.cs
+[verification]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/src/Security/Codout.Security.Core/PasswordVerificationResult.cs
+[argon]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/src/Security/Codout.Security.Argon2/ArgonPasswordHash.cs
+[template]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.Mailer/Interfaces/ITemplateEngine.cs
+[razor]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.Mailer.Razor/Codout.Mailer.Razor.csproj
+[image-project]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.Image.Extensions/Codout.Image.Extensions.csproj
+[mcp-project]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.Framework.Mcp/src/Tools/Codout.Framework.Mcp/Codout.Framework.Mcp.csproj
+[tenant-project]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.Multitenancy/Softprime.Multitenancy.csproj
+[tenant]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/Codout.Multitenancy/MemoryCacheTenantResolver.cs
+[license]: https://github.com/Codout/Codout.Framework/blob/0e746b50697693228bbd36926be3cc8d2d1f457c/LICENSE
+[tenant-history]: https://github.com/Codout/Codout.Framework/commit/04f0743a7eed54a7e8d5ade0e8f9ffed85d6c308
+[softprime-history]: https://github.com/softprime/Softprime.Framework/commit/2dafe89af6b0874099f04c60ff8e599954bf9e1c
+[softprime-tenant]: https://github.com/softprime/Softprime.Framework/blob/f732c52afd663a0a082119ae8df6fbe0f7a455cc/src/multitenant/Softprime.Framework.Multitenancy/MemoryCacheTenantResolver.cs
+[softprime-license]: https://github.com/softprime/Softprime.Framework/blob/f732c52afd663a0a082119ae8df6fbe0f7a455cc/src/LICENSE.txt
