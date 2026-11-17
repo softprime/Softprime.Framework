@@ -133,3 +133,5 @@ dotnet run --project samples/04-WebApi/Softprime.Samples.WebApi.csproj --framewo
 | `403 Forbidden` ao chamar `/api/produtos` no modo `--serve` | Faltou enviar o cabeçalho de autenticação exigido por `ApiKeyAuthorizeFilter`. | Envie o header `X-Api-Key: softprime-sample-key-2026` na requisição. |
 | Porta `5084` ocupada no modo `--serve` | Outro processo local está escutando na porta `5084`. | Use o modo padrão (sem `--serve`) que aloca automaticamente uma porta efêmera livre (`0`), ou encerre o processo conflitante. |
 | O projeto gerou `.nupkg` indesejado | O arquivo `samples/Directory.Build.props` foi removido ou ignorado. | Restaure o arquivo `samples/Directory.Build.props` com `<IsPackable>false</IsPackable>`. |
+
+Compilar exige SDK 10.0.401 (latestPatch); instalar os runtimes executados. Nos projetos multi-target selecione `--framework net10.0` ou `--framework net8.0`. CI e consumo de pacotes dependem do PR #42; execução local não comprova CI verde.
