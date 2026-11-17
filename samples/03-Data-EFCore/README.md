@@ -122,3 +122,7 @@ dotnet run --project samples/03-Data-EFCore/Softprime.Samples.DataEFCore.csproj 
 | `TypeInitializationException` em `QueryableMethods` | Execução forçada em `.NET 8/10` ou versão `5.0.2` do pacote SQLite. | Utilize o target `net6.0` com `Microsoft.EntityFrameworkCore.Sqlite 5.0.17`, já configurados no `.csproj`. |
 | `ArgumentException` em `repo.Get(id)` | Passagem de chave `int` para entidade `Entity` (cujo `Id` é `long?`). | Sempre passe chaves do tipo `long` (ex.: `1L` ou `produto.Id.Value`) ao consultar entidades herdadas de `Entity`. |
 | O projeto gerou `.nupkg` indesejado | O arquivo `samples/Directory.Build.props` foi removido ou ignorado. | Restaure o arquivo `samples/Directory.Build.props` com `<IsPackable>false</IsPackable>`. |
+
+Compilar exige SDK 10.0.401 (latestPatch); instalar os runtimes executados. Nos projetos multi-target selecione `--framework net10.0` ou `--framework net8.0`. CI e consumo de pacotes dependem do PR #42; execução local não comprova CI verde.
+
+Exceção temporária: net6.0/EFCore5 exige runtime .NET 6 fora de suporte. O exemplo caracteriza APIs existentes; migrar após implementação e validação da persistência moderna, sem alterar produção para viabilizar este sample.
