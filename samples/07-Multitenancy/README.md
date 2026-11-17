@@ -124,3 +124,5 @@ dotnet run --project samples/07-Multitenancy/Softprime.Samples.Multitenancy.cspr
 | `400 BadRequest` ao chamar `/api/pedidos` no modo `--serve` | Nenhum tenant foi informado na requisição. | Envie o header `X-Tenant-Key: alpha`, a query `?tenant=beta` ou acesse via `http://alpha.localhost:5087/api/pedidos`. |
 | Cache miss inesperado em `MemoryCacheTenantResolver` próprio | `GetContextIdentifier(HttpContext)` retornou chave diferente de `GetTenantIdentifier(TenantContext)`. | Normalize ambas as chaves exatamente com o mesmo formato (ex.: `ToLowerInvariant()`). |
 | Porta `5087` ocupada no modo `--serve` | Outro processo local está escutando na porta `5087`. | Use o modo padrão (sem `--serve`) que aloca uma porta efêmera livre (`0`), ou encerre o processo conflitante. |
+
+Compilar exige SDK 10.0.401 (latestPatch); instalar os runtimes executados. Nos projetos multi-target selecione `--framework net10.0` ou `--framework net8.0`. CI e consumo de pacotes dependem do PR #42; execução local não comprova CI verde.
