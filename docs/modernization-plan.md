@@ -302,14 +302,14 @@ A implementação futura será considerada validada quando os 14 projetos import
 
 ### Síntese executiva da auditoria:
 - **Correção de Vulnerabilidades Ativas:**
-  - `Newtonsoft.Json 12.0.3` (`Softprime.Framework.Api.Client`): Vulnerabilidade de alta severidade (GHSA-5crp-9r3c-p9vr — DoS por StackOverflow). Correção aprovada: atualização para `Newtonsoft.Json 13.0.3` no target `netstandard2.0` (zero breaking changes para consumidores `net48`).
-  - `NHibernate 5.3.5` (`Softprime.Framework.NH`): Vulnerabilidade de alta severidade (GHSA-fg4q-ccq8-3r5q — RCE/DoS em desserialização). Correção aprovada: atualização para `NHibernate 5.7.1` e `FluentNHibernate 3.5.0` mantendo a linha legada 5.x congelada e segura.
+  - `Newtonsoft.Json 12.0.3` (`Softprime.Framework.Api.Client`): Vulnerabilidade de alta severidade (GHSA-5crp-9r3c-p9vr — DoS por StackOverflow). Correção aprovada: atualização para `Newtonsoft.Json 13.0.3` no target `netstandard2.0` (compatibilidade net48 a validar).
+  - `NHibernate 5.3.5` (`Softprime.Framework.NH`): Vulnerabilidade de alta severidade (GHSA-fg4q-ccq8-3r5q — SQL injection em mappings, HQL e utilitários). Correção aprovada: atualização para `NHibernate 5.7.1` e `FluentNHibernate 3.5.0` mantendo a linha legada 5.x congelada e segura.
 - **Desacoplamento e Estabilização do Mailer:**
   - `RazorLight 2.0.0-rc.3` (`Softprime.Framework.Mailer`): Saída do pré-release antigo para a versão estável `RazorLight 2.3.1`.
   - Desacoplamento arquitetural (achado do comparativo com Codout [#17]/[#22]): introdução da abstração `ITemplateRenderer` para separar o contrato de despacho de e-mails da compilação de templates Razor, viabilizando testes mais simples e novos renderizadores sem acoplamento forçado.
 - **Atualização Seletiva de Pacotes Adicionais:**
-  - `EntityFramework 6.4.4` (`Softprime.Framework.EF6`): Atualização para `EntityFramework 6.5.1` (elimina alerta de biblioteca `Legacy` e habilita compatibilidade moderna).
-  - `AWSSDK.SimpleEmailV2 3.5.1.25`: Atualização para a linha estável madura `3.7.x` LTS.
+  - `EntityFramework 6.4.4` (`Softprime.Framework.EF6`): Atualização para `EntityFramework 6.5.1` (candidata; depreciação e compatibilidade precisam ser verificadas).
+  - `AWSSDK.SimpleEmailV2 3.5.1.25`: Atualização para a linha estável madura `3.7.x` candidata, com suporte vigente a confirmar.
   - `SendGrid 9.22.0`: Atualização menor/patch para `SendGrid 9.29.3`.
 - **Invariantes Invioláveis de Segurança e Retrocompatibilidade (`Common.Security`):**
   - **Preservação de Leitura:** Nenhuma chave, IV ou rotina de descriptografia legada (`CryptoString.Decrypt`, `CryptoFile.DecryptFile`, `SimpleHash.VerifyHash`) será descontinuada ou alterada de forma incompatível. Dados já cifrados em bancos de clientes continuarão 100% legíveis.

@@ -13,8 +13,8 @@ Este documento consolida a auditoria completa das dependências externas e dos c
 
 ### Principais Conclusões:
 1. **Vulnerabilidades Ativas:**
-   - `Newtonsoft.Json 12.0.3` (`Softprime.Framework.Api.Client`): Alta severidade ([GHSA-5crp-9r3c-p9vr](https://github.com/advisories/GHSA-5crp-9r3c-p9vr) - DoS por StackOverflow). Correção direta: `13.0.3` (zero breaking changes para `netstandard2.0` e `net48`).
-   - `NHibernate 5.3.5` (`Softprime.Framework.NH`): Alta severidade ([GHSA-fg4q-ccq8-3r5q](https://github.com/advisories/GHSA-fg4q-ccq8-3r5q) - DoS/RCE em desserialização insegura). Correção: `5.7.1` (mantendo-se na linha 5.x estável compatível com `net48` e `netstandard2.0`).
+   - `Newtonsoft.Json 12.0.3` (`Softprime.Framework.Api.Client`): Alta severidade ([GHSA-5crp-9r3c-p9vr](https://github.com/advisories/GHSA-5crp-9r3c-p9vr) - DoS por StackOverflow). Correção direta: `13.0.3` (assets compatíveis; regressão ainda a validar).
+   - `NHibernate 5.3.5` (`Softprime.Framework.NH`): Alta severidade ([GHSA-fg4q-ccq8-3r5q](https://github.com/advisories/GHSA-fg4q-ccq8-3r5q) - SQL injection em mappings, HQL e utilitários). Correção: `5.7.1` (mantendo-se na linha 5.x estável compatível com `net48` e `netstandard2.0`).
 2. **Dependência em Pré-Release Histórico (`RazorLight`):**
    - `Softprime.Framework.Mailer` utiliza `RazorLight 2.0.0-rc.3` acoplado diretamente em `SoftprimeMailer`. A versão estável candidata é `2.3.1`. O comparativo arquitetural com o Codout ([#17]/[#22]) indica a necessidade de **desacoplar o contrato de envio do mecanismo de templates** através de uma abstração (`ITemplateRenderer`).
 3. **Pacotes Deprecados:**
@@ -28,7 +28,7 @@ Este documento consolida a auditoria completa das dependências externas e dos c
 
 ## 2. Auditoria Factual de Dependências de Terceiros
 
-A auditoria foi executada via CLI oficial do .NET SDK sobre a solution `src/Softprime.Framework.All.sln` com restore contra `nuget.org`.
+Revisão documental das referências e fontes oficiais em 2026-11-17. Não há logs anexos que comprovem a execução histórica da auditoria CLI. As versões são candidatas; implementação exige restore, auditoria das transitivas e testes por target.
 
 ### 2.1. Tabela Geral de Inventário e Avaliação
 
@@ -38,8 +38,8 @@ A auditoria foi executada via CLI oficial do .NET SDK sobre a solution `src/Soft
 | `RazorLight` | `Mailer` | 2.0.0-rc.3 | `netstandard2.0;netstandard2.1;net48` | `2.3.1` | Pré-release histórico | **Médio** (acoplamento) | Isolar contrato (`ITemplateRenderer`) e atualizar engine para `2.3.1`. |
 | `NHibernate` | `NH` | 5.3.5 | `netstandard2.0;netstandard2.1;net48` | `5.7.1` | **Alta** (GHSA-fg4q-ccq8-3r5q) | **Médio** | Atualizar para `5.7.1` na família 5.x. Manter pacote legado congelado. |
 | `FluentNHibernate` | `NH` | 3.1.0 | `netstandard2.0;netstandard2.1;net48` | `3.5.0` | Estável | **Baixo** | Atualizar em conjunto com o NHibernate 5.7.1. |
-| `EntityFramework` | `EF6` | 6.4.4 | `netstandard2.1;net48` | `6.5.1` | `Legacy` (NuGet alert) | **Mínimo** | Atualizar para `6.5.1` (mantém 100% retrocompatibilidade `net48`). |
-| `AWSSDK.SimpleEmailV2` | `Mailer.AWS` | 3.5.1.25 | `netstandard2.0;netstandard2.1;net48` | `3.7.x` (LTS v3) | Desatualizado (2021) | **Baixo** | Atualizar para a versão mais recente da linha v3.7 (evitar v4 por breaking changes de API). |
+| `EntityFramework` | `EF6` | 6.4.4 | `netstandard2.1;net48` | `6.5.1` | `Legacy` (NuGet alert) | **Mínimo** | Atualizar para `6.5.1` (possui asset compatível com net48; regressão ainda a validar). |
+| `AWSSDK.SimpleEmailV2` | `Mailer.AWS` | 3.5.1.25 | `netstandard2.0;netstandard2.1;net48` | `3.7.x` (linha v3; suporte a confirmar) | Desatualizado (2021) | **Baixo** | Atualizar para a versão mais recente da linha v3.7 (evitar v4 por breaking changes de API). |
 | `SendGrid` | `Mailer.SendGrid` | 9.22.0 | `netstandard2.0;netstandard2.1;net48` | `9.29.3` | Estável | **Mínimo** | Atualização menor/patch para estabilidade de TLS e HTTP. |
 | `System.ComponentModel.Annotations` | `Common`, `Domain`, `Multitenancy` | 5.0.0 | Multi-target | `5.0.0` | Estável | **Nenhum** | Manter em `netstandard2.0` e `net48`; suprimir em `net10.0;net8.0` (fornecido pelo runtime). |
 
@@ -48,10 +48,10 @@ A auditoria foi executada via CLI oficial do .NET SDK sobre a solution `src/Soft
 ### 2.2. Análise Detalhada por Componente
 
 #### A. `Softprime.Framework.Api.Client` (`Newtonsoft.Json`)
-- **Problema:** A versão 12.0.3 possui vulnerabilidade conhecida em que payloads com profundidade de aninhamento excessiva (> 64 níveis) causam `StackOverflowException` e terminação imediata do processo IIS/.NET, configurando Denial of Service (DoS).
+- **Problema:** A versão 12.0.3 possui vulnerabilidade conhecida em que entradas profundamente aninhadas podem causar consumo excessivo de CPU/memória ou StackOverflow conforme o caminho de serialização, configurando Denial of Service (DoS).
 - **Compatibilidade com Targets (#3):** O `Newtonsoft.Json 13.0.3` tem suporte oficial a `netstandard2.0`, `net45`, `net6.0+`. Atende perfeitamente ao target `netstandard2.0` aprovado para `Softprime.Framework.Api.Client`.
 - **Avaliação de `System.Text.Json`:**
-  - O runtime moderno (.NET 8 e .NET 10) possui `System.Text.Json` integrado com alto desempenho e zero-allocation.
+  - O runtime moderno (.NET 8 e .NET 10) possui `System.Text.Json` integrado com alto desempenho .
   - No entanto, `JsonExtensions.cs` expõe métodos de extensão utilitários (`ReadAsAsync`, `PostAsJsonAsync`, `PutAsJsonAsync`) que utilizam convenções do Newtonsoft (ex.: `NullValueHandling.Ignore`).
   - **Decisão:** Atualizar `Newtonsoft.Json` para `13.0.3` na baseline de compatibilidade universal. Para futuros alvos modernos (`net10.0`), desacoplar a serialização via interface de opções ou permitir que o consumidor escolha o serializador sem impor quebra de contrato aos consumidores `net48`.
 
@@ -70,11 +70,11 @@ A auditoria foi executada via CLI oficial do .NET SDK sobre a solution `src/Soft
   3. Permitir injeção de `ITemplateRenderer` no construtor de `SoftprimeMailer`, preservando o construtor legado para compatibilidade binária.
 
 #### C. `Softprime.Framework.NH` (`NHibernate` e `FluentNHibernate`)
-- **Problema:** `NHibernate 5.3.5` possui vulnerabilidade de alta severidade quando desserializa dados de critérios ou estado de sessão oriundos de fontes não confiáveis.
-- **Decisão:** Atualizar para `NHibernate 5.7.1` (última release da família 5.x) e `FluentNHibernate 3.5.0`. Como o pacote `Softprime.Framework.NH` foi classificado como **linha legada preservada** ([#5]), a atualização permanece estritamente na família 5.x para não quebrar mapeamentos existentes em sistemas corporativos que ainda operam com `net48` e banco Oracle/SQL Server.
+- **Problema:** `NHibernate 5.3.5` está na faixa afetada por SQL injection do GHSA-fg4q-ccq8-3r5q: discriminadores, campos estáticos em HQL e utilitários que chamam ObjectToSQLString. O advisory informa correções em 5.4.9 e 5.5.2.
+- **Decisão:** Atualizar para `NHibernate 5.7.1` (candidata da família 5.x) e `FluentNHibernate 3.5.0`. Como o pacote `Softprime.Framework.NH` foi classificado como **linha legada preservada** ([#5]), a atualização permanece estritamente na família 5.x para não quebrar mapeamentos existentes em sistemas corporativos que ainda operam com `net48` e banco Oracle/SQL Server.
 
 #### D. `Softprime.Framework.Mailer.AWS` e `Mailer.SendGrid`
-- **AWS SES V2:** O pacote `AWSSDK.SimpleEmailV2` está na versão `3.5.1.25`. O AWS SDK lançou a major version 4.0 recentemente, mas ela inclui refatorações substanciais em `AmazonServiceClientConfig`. A decisão segura é fixar na versão `3.7.x` LTS, que mantém 100% de compatibilidade com o código atual de despacho de e-mails e roda em `netstandard2.0` e `net48`.
+- **AWS SES V2:** O pacote `AWSSDK.SimpleEmailV2` está na versão `3.5.1.25`. O AWS SDK lançou a major version 4.0 recentemente, mas ela inclui refatorações substanciais em `AmazonServiceClientConfig`. A decisão segura é fixar na versão `3.7.x` LTS, cuja versão exata, suporte vigente, assets e compatibilidade precisam ser confirmados antes da implementação.
 - **SendGrid:** A versão `9.22.0` deve ser atualizada para `9.29.3` (versão madura da linha 9.x, mantendo compatibilidade de API de envio).
 
 ---
@@ -119,7 +119,7 @@ Softprime.Framework.Common/Security/
 #### 3. `SimpleHash.cs`
 - **Diagnóstico Factual:**
   - Algoritmo: `ComputeHash` executa apenas **uma única iteração** de MD5, SHA1 ou SHA256 sobre `plainText + salt`.
-  - Salt Fraco: Salt de 4 a 8 bytes gerado via `new Random().Next(4, 8)`. O tamanho recomendado por padrões de segurança (OWASP/NIST) é de pelo menos 16 bytes, gerado por CSPRNG.
+  - Salt Fraco: Tamanho de salt de 4 a 8 bytes selecionado via System.Random; os bytes são preenchidos por RNGCryptoServiceProvider. O tamanho recomendado por padrões de segurança (OWASP/NIST) é de pelo menos 16 bytes, gerado por CSPRNG.
   - Ausência de KDF (Key Derivation Function): Não há fator de trabalho (iterações, memória, paralelismo). Um hash SHA256 simples pode ser verificado centenas de bilhões de vezes por segundo em GPUs modernas.
   - Formato Serializado: `Base64( HashBytes + SaltBytes )`.
   - **Invariante de Negócio Inviolável:** Milhares de usuários em sistemas de clientes possuem senhas armazenadas neste formato. Quebrar `VerifyHash` impediria o login de todos os usuários corporativos existentes.
@@ -140,7 +140,7 @@ Para elevar a segurança do framework sem gerar quebra de dados existentes, a Fa
 ```mermaid
 flowchart TD
     Start([Chamada a Decrypt: phrase]) --> CheckFormat{Inicia com prefixo moderno?<br>ex: $aes$v1$}
-    CheckFormat -- Sim --> DecryptAes[Descriptografar via AES-256-GCM / CBC<br>com IV extraído do payload]
+    CheckFormat -- Sim --> DecryptAes[Descriptografar via formato autenticado moderno a especificar<br>com IV extraído do payload]
     CheckFormat -- Não --> DecryptLegacy[Descriptografar via DES Legado<br>com Chave e IV estáticos]
     DecryptAes --> Retorno([Texto Claro Retornado])
     DecryptLegacy --> Retorno
@@ -151,8 +151,8 @@ flowchart TD
 2. **Criptografia Moderna Paralela (`AesCryptoString`):**
    - Introdução de classe moderna baseada em `Aes.Create()` (AES-256).
    - Suporte a chave parametrizável/injetada via `IConfiguration` ou segredo externo (nunca mais hardcoded).
-   - IV dinâmico de 16 bytes gerado via `RandomNumberGenerator` para cada cifragem e prefixado no output.
-   - Formato do payload moderno: `$aes$v1$<IV_Base64>$<Cipher_Base64>$<Tag_Base64>`.
+   - Nonce/IV e autenticação serão especificados junto com o algoritmo, targets e vetores de teste. Não misturar parâmetros de GCM e CBC.
+   - Envelope moderno versionado a especificar antes da implementação; o prefixo ilustrativo não define protocolo disponível.
 
 ---
 
@@ -225,12 +225,12 @@ sequenceDiagram
 
 | Prioridade | Componente | Escopo de Implementação (Fase 2 de Código) | Justificativa de Risco |
 |:---:|---|---|---|
-| **P1** | `Api.Client` | Atualizar `Newtonsoft.Json` para `13.0.3` | Elimina vulnerabilidade crítica DoS (GHSA-5crp-9r3c-p9vr) sem qualquer breaking change. |
+| **P1** | `Api.Client` | Atualizar `Newtonsoft.Json` para `13.0.3` | Elimina vulnerabilidade crítica DoS (GHSA-5crp-9r3c-p9vr) com compatibilidade a validar. |
 | **P1** | `Common.Security` | Preservar `Decrypt` legado e especificar `AesCryptoString` | Protege os dados já criptografados em bases de clientes contra perda irrecuperável. |
 | **P1** | `Common.Security` | Implementar `IPasswordHasher` com Rehash Transparente | Eleva o patamar de segurança de senhas contra força bruta em GPU preservando o acesso de usuários legados. |
-| **P1** | `NH` | Atualizar `NHibernate` para `5.7.1` e `FluentNHibernate` para `3.5.0` | Mitiga CVE de execução de código / DoS no pacote de dados legado. |
+| **P1** | `NH` | Atualizar `NHibernate` para `5.7.1` e `FluentNHibernate` para `3.5.0` | Mitiga SQL injection do GHSA-fg4q-ccq8-3r5q; validar os mapeamentos. |
 | **P2** | `Mailer` | Desacoplar `ITemplateRenderer` e atualizar `RazorLight` para `2.3.1` | Elimina pré-release e desacopla dependência pesada de reflexão. |
-| **P2** | `EF6` | Atualizar `EntityFramework` para `6.5.1` | Remove alerta de biblioteca `Legacy` e garante suporte moderno ao ecossistema EF6. |
+| **P2** | `EF6` | Atualizar `EntityFramework` para `6.5.1` | Candidata com assets modernos e legados; depreciação e regressão devem ser verificadas. |
 | **P2** | `Mailer.AWS` / `SendGrid` | Atualizar SDKs para linhas estáveis maduras | Manutenção preventiva e correção de transporte HTTP/TLS. |
 
 ---
@@ -244,4 +244,11 @@ sequenceDiagram
 - [x] **Isolamento de Código:** Nenhuma alteração prematura de código C# ou de pacotes foi aplicada nesta rodada documental.
 
 ---
-*Relatório de governança homologado para subsidiar os PRs de implementação de código da Fase 2.*
+*Relatório de planejamento sujeito a revisão; nenhuma atualização de produção aplicada.*
+
+## Fontes verificadas e limites
+
+- [Newtonsoft GHSA-5crp-9r3c-p9vr](https://github.com/advisories/GHSA-5crp-9r3c-p9vr): versões anteriores a 13.0.1 afetadas; 13.0.3 permanece candidata.
+- [NHibernate GHSA-fg4q-ccq8-3r5q](https://github.com/advisories/GHSA-fg4q-ccq8-3r5q): SQL injection, não RCE por desserialização.
+- Assets e dependências: [NHibernate 5.7.1](https://www.nuget.org/packages/NHibernate/5.7.1), [FluentNHibernate 3.5.0](https://www.nuget.org/packages/FluentNHibernate/3.5.0), [RazorLight 2.3.1](https://www.nuget.org/packages/RazorLight/2.3.1), [EntityFramework 6.5.1](https://www.nuget.org/packages/EntityFramework/6.5.1), [SendGrid 9.29.3](https://www.nuget.org/packages/SendGrid/9.29.3). Assets não comprovam paridade comportamental.
+- Suporte vigente da AWS v3 e depreciação do EF6 não foram comprovados nesta revisão; idade não equivale a vulnerabilidade. Levantamento externo de consumidores não será pré-requisito.
