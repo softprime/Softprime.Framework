@@ -129,3 +129,5 @@ dotnet run --project samples/05-ApiClient/Softprime.Samples.ApiClient.csproj --f
 | `Warning NU1903` sobre `Newtonsoft.Json 12.0.3` | Dependência transitiva atual de `Softprime.Framework.Api.Client` antes da modernização `#6`. | Aviso esperado enquanto `src/` permanece intacto na trilha `#19`; não impede build nem execução. |
 | `ApiException` ao consumir API própria que exige outro nome de header | `ApiClientBase` envia os headers fixos `ApiKey` e `TenantKey`. | Alinhe o filtro/middleware da API ou ajuste `client.Client.DefaultRequestHeaders` antes das chamadas. |
 | O projeto gerou `.nupkg` indesejado | O arquivo `samples/Directory.Build.props` foi removido ou ignorado. | Restaure `samples/Directory.Build.props` com `<IsPackable>false</IsPackable>`. |
+
+Compilar exige SDK 10.0.401 (latestPatch); instalar os runtimes executados. Nos projetos multi-target selecione `--framework net10.0` ou `--framework net8.0`. CI e consumo de pacotes dependem do PR #42; execução local não comprova CI verde.
