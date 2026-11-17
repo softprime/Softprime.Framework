@@ -27,12 +27,12 @@ Este sample ensina de forma prática os padrões fundamentais de Domain-Driven D
 
 ### No Windows (PowerShell):
 ```powershell
-dotnet run --project samples/02-Domain/Softprime.Samples.Domain.csproj
+dotnet run --project samples/02-Domain/Softprime.Samples.Domain.csproj --framework net10.0
 ```
 
 ### No Linux / macOS (Bash):
 ```bash
-dotnet run --project samples/02-Domain/Softprime.Samples.Domain.csproj
+dotnet run --project samples/02-Domain/Softprime.Samples.Domain.csproj --framework net10.0
 ```
 
 ---
@@ -109,12 +109,12 @@ Para execução em esteiras de integração contínua (CI) ou testes automatizad
 
 ### No Windows (PowerShell):
 ```powershell
-dotnet run --project samples/02-Domain/Softprime.Samples.Domain.csproj -- --smoke-test
+dotnet run --project samples/02-Domain/Softprime.Samples.Domain.csproj --framework net10.0 -- --smoke-test
 ```
 
 ### No Linux / macOS (Bash):
 ```bash
-dotnet run --project samples/02-Domain/Softprime.Samples.Domain.csproj -- --smoke-test
+dotnet run --project samples/02-Domain/Softprime.Samples.Domain.csproj --framework net10.0 -- --smoke-test
 ```
 
 **Saída esperada:**
@@ -132,3 +132,5 @@ dotnet run --project samples/02-Domain/Softprime.Samples.Domain.csproj -- --smok
 | Entidades transientes com mesmo documento retornam `Equals == false` | Não sobrescreveu `GetTypeSpecificSignatureProperties()`. | Em classes herdadas de `Entity`, sobrescreva `GetTypeSpecificSignatureProperties()` retornando a `PropertyInfo` que identifica o negócio (ex.: `typeof(Cliente).GetProperty(nameof(Documento))!`). |
 | `ValueObject` lança `InvalidOperationException` sobre `DomainSignature` | Uso de atributo em `ValueObject`. | Value Objects por convenção comparam todas as suas propriedades públicas. Não utilize assinaturas explícitas em Value Objects. |
 | O projeto gerou `.nupkg` indesejado | O arquivo `samples/Directory.Build.props` foi removido ou ignorado. | Restaure o arquivo `samples/Directory.Build.props` com `<IsPackable>false</IsPackable>`. |
+
+Compilar exige SDK 10.0.401 (latestPatch); instalar os runtimes executados. Nos projetos multi-target selecione `--framework net10.0` ou `--framework net8.0`. CI e consumo de pacotes dependem do PR #42; execução local não comprova CI verde.

@@ -26,12 +26,12 @@ Este sample ensina de forma prática como utilizar os recursos essenciais do `So
 
 ### No Windows (PowerShell):
 ```powershell
-dotnet run --project samples/01-Common/Softprime.Samples.Common.csproj
+dotnet run --project samples/01-Common/Softprime.Samples.Common.csproj --framework net10.0
 ```
 
 ### No Linux / macOS (Bash):
 ```bash
-dotnet run --project samples/01-Common/Softprime.Samples.Common.csproj
+dotnet run --project samples/01-Common/Softprime.Samples.Common.csproj --framework net10.0
 ```
 
 ---
@@ -107,12 +107,12 @@ Para execução em esteiras de integração contínua (CI) ou testes automatizad
 
 ### No Windows (PowerShell):
 ```powershell
-dotnet run --project samples/01-Common/Softprime.Samples.Common.csproj -- --smoke-test
+dotnet run --project samples/01-Common/Softprime.Samples.Common.csproj --framework net10.0 -- --smoke-test
 ```
 
 ### No Linux / macOS (Bash):
 ```bash
-dotnet run --project samples/01-Common/Softprime.Samples.Common.csproj -- --smoke-test
+dotnet run --project samples/01-Common/Softprime.Samples.Common.csproj --framework net10.0 -- --smoke-test
 ```
 
 **Saída esperada:**
@@ -130,3 +130,5 @@ dotnet run --project samples/01-Common/Softprime.Samples.Common.csproj -- --smok
 | `CS5001: Programa não contém um método 'Main'` | Tentativa de build em projeto corrompido ou sem ponto de entrada. | Certifique-se de que `Program.cs` existe e está presente na pasta `samples/01-Common/`. |
 | `System.ArgumentException: 'iso-8859-8' is not a supported encoding` | Falta de registro do provedor de CodePages no runtime moderno. | O sample já executa `Encoding.RegisterProvider(CodePagesEncodingProvider.Instance)` no `Main`. Caso reutilize o método em outra aplicação, adicione essa linha na inicialização. |
 | O projeto gerou `.nupkg` indesejado | O arquivo `samples/Directory.Build.props` foi removido ou ignorado. | Restaure o arquivo `samples/Directory.Build.props` com `<IsPackable>false</IsPackable>`. |
+
+Compilar exige SDK 10.0.401 (latestPatch); instalar os runtimes executados. Nos projetos multi-target selecione `--framework net10.0` ou `--framework net8.0`. CI e consumo de pacotes dependem do PR #42; execução local não comprova CI verde.
