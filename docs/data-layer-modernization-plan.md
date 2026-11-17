@@ -64,7 +64,7 @@ flowchart TD
 2. **Fim de Vida Útil (EOL) das Dependências Microsoft EF Core Legadas:**  
    - `Microsoft.EntityFrameworkCore 3.1.11`: Fim de suporte pela Microsoft em **13 de dezembro de 2022**.
    - `Microsoft.EntityFrameworkCore 5.0.2`: Fim de suporte pela Microsoft em **10 de maio de 2022**.  
-   Ambas as versões não recebem patches de segurança, são incompatíveis com C# moderno e não podem ser referenciadas por aplicações rodando em runtimes modernos (.NET 8 LTS ou .NET 10 LTS).
+   Ambas as versões não recebem patches de segurança, não têm funcionamento assegurado em runtimes modernos. Referenciabilidade por TFM não comprova funcionamento; validar cada combinação sem associar compatibilidade do ORM à versão de C#.
 3. **Incompatibilidade Específica de Plataforma em `EFCore5`:**  
    O arquivo `Softprime.Framework.EFCore5.csproj` possui `<TargetFramework>netstandard2.1</TargetFramework>`. Dado o fato inviolável de que **`.NET Standard 2.1 não roda em .NET Framework 4.8`**, consumidores em `net48` **nunca conseguiram utilizar `EFCore5`**.
 4. **Variações de Namespace:**  
@@ -77,17 +77,9 @@ flowchart TD
 
 ## 2. Mapeamento de Consumidores e Dependências por Linha (#10)
 
-Em conformidade com a auditoria P0 realizada na issue [#10] ([docs/package-inventory.md](package-inventory.md)), os consumidores corporativos externos residem fora deste repositório git e seus perfis técnicos são mapeados como segue:
+Não haverá inventário de aplicações consumidoras externas. O inventário técnico de pacotes permanece como fonte dos targets e dependências declarados. Não atribuir bancos, runtimes ou perfis de aplicação a consumidores não observados.
 
-### Matriz de Relação Linha × Runtime × Perfil de Consumo
-
-| Pacote | Runtime do Consumidor | Banco de Dados Principal | Dependências Transitivas Críticas | Situação no Ecossistema |
-|---|---|---|---|---|
-| `Softprime.Framework.EFCore3` | `netcoreapp3.1`, `net48` *(via standard2.0)* | SQL Server, PostgreSQL | `Microsoft.Extensions.DependencyInjection` 3.1.x, `Microsoft.Extensions.Logging` 3.1.x | Linha legada estável. Consumidores são microsserviços legados construídos na época do .NET Core 3.1. |
-| `Softprime.Framework.EFCore5` | `net5.0`, `net6.0` *(via standard2.1)* | SQL Server | `Microsoft.Extensions.DependencyInjection` 5.0.x | Linha transitória. Consumidores que migraram para .NET 5. Incompatível com .NET Framework 4.8. |
-| `Softprime.Framework.EF6` | `net48` (nativo), `netcoreapp3.1+` *(via standard2.1)* | SQL Server, Oracle | `EntityFramework 6.4.4` | Linha legada altamente crítica. Consumida por monólitos corporativos complexos em `.NET Framework 4.8` que dependem de stored procedures, transações distribuídas (MSDTC) e EDMX/CodeFirst clássico. |
-| `Softprime.Framework.NH` | `net48` (nativo), `net8.0` *(via standard2.0)* | Oracle, SQL Server | `Iesi.Collections 4.0.4`, Castle.Core (proxies) | Linha legada corporativa. Consumida por aplicações com mapeamentos relacionais avançados Fluent/HBM, geradores dinâmicos de proxy e suporte histórico a bancos legados. |
-| `Softprime.Framework.EFCore10` *(Novo)* | `net10.0` (LTS), `net8.0` (LTS) | SQL Server, PostgreSQL, SQLite, Oracle moderno | `Microsoft.EntityFrameworkCore 10.x / 8.x` | Alvo primário de novos projetos, novos microsserviços e sistemas migrados para runtimes LTS modernos. |
+As decisões usam contratos públicos, matriz aprovada e testes de referência. A ausência de levantamento externo não bloqueia o planejamento nem autoriza remover linhas legadas.
 
 ---
 
@@ -95,7 +87,7 @@ Em conformidade com a auditoria P0 realizada na issue [#10] ([docs/package-inven
 
 > [!IMPORTANT]
 > **Diretriz de Preservação Inviolável:**  
-> Nenhuma biblioteca legada de persistência será removida, renomeada ou descontinuada sem comprovação de descontinuação de 100% dos consumidores correspondentes.
+> Nenhuma biblioteca legada de persistência será removida, renomeada ou descontinuada sem decisão explícita de compatibilidade e versionamento, documentação de migração e validação dos contratos suportados. Não será exigido levantamento externo.
 
 ### 3.1. `Softprime.Framework.EFCore3`
 - **Decisão:** **Manter Linha Legada Congelada**.
