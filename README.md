@@ -76,7 +76,7 @@ EFCore10       EFCore3         EFCore5          EF6            NH (NHibernate)
 ### data
 - **Softprime.Framework.Domain** — Contratos e classes base de domínio: `Entity`, `EntityWithTypedId<TId>`, `ValueObject`, `BaseObject`, `ValidatableObject`, `DomainSignatureAttribute`.
 - **Softprime.Framework.DAL** — Interfaces de persistência: `IEntity`, `IEntity<T>`, `IRepository<T>`, `IUnitOfWork`, `IUnitOfWorkFactory`, `ITenant`, `IHasAssignedId`.
-- **Softprime.Framework.EFCore10** — Implementação moderna para Entity Framework Core no ecossistema .NET moderno (`net10.0;net8.0`).
+- **Softprime.Framework.EFCore10 (planejado; ainda não implementado)** — Implementação moderna para Entity Framework Core no ecossistema .NET moderno (`net10.0;net8.0`).
 - **Softprime.Framework.EFCore3** — Linha legada para EF Core 3.1.
 - **Softprime.Framework.EFCore5** — Linha legada para EF Core 5.0.
 - **Softprime.Framework.EF6** — Linha legada para Entity Framework 6.4.

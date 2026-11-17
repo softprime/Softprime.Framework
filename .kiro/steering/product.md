@@ -9,7 +9,7 @@ Fornecer abstrações consolidadas e implementações plugáveis para as necessi
 ## Áreas Funcionais
 
 - **general** — funções utilitárias essenciais: extensões ricas (strings, datas, coleções, reflexão), helpers, segurança (criptografia simétrica/assimétrica, hash com rehash transparente) e anotações customizadas de validação.
-- **data** — camada de domínio (entidades com domain signature, value objects, lifecycle hooks) e abstrações de persistência (`IRepository<T>`, `IUnitOfWork`), com implementações para EF Core moderno (`EFCore10`) e sustentação de linhas legadas (`EF Core 3`, `EF Core 5`, `EF6`, `NHibernate`).
+- **data** — camada de domínio (entidades com domain signature, value objects, lifecycle hooks) e abstrações de persistência (`IRepository<T>`, `IUnitOfWork`), com implementações existentes para `EF Core 3`, `EF Core 5`, `EF6` e `NHibernate`. `EFCore10` é planejado e ainda não foi implementado.
 - **api** — contratos e infraestrutura para Web APIs corporativas: padronização CRUD (`IApi<TDto, TId>`), filtros de segurança (API Key), contratos DTO (`IDto`, `PagedResultDto`) e cliente HTTP tipado (`ApiClient`).
 - **mail** — motor de templates e despacho de e-mails corporativos desacoplado da engine de renderização, com provedores plugáveis para AWS SES e SendGrid.
 - **multitenant** — motor de multitenancy para ASP.NET Core: resolução dinâmica de tenants (estratégias de cabeçalho, rota, subdomínio, cache), isolamento de contexto e middleware de injeção de dependência por tenant.

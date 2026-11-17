@@ -15,7 +15,7 @@ Softprime.Framework/
 │   ├── data/
 │   │   ├── Softprime.Framework.Domain/
 │   │   ├── Softprime.Framework.DAL/
-│   │   ├── Softprime.Framework.EFCore10/ # Novo ORM moderno (net10.0;net8.0) (#5)
+│   │   ├── Softprime.Framework.EFCore10/ # Planejado; diretório ainda não implementado (#5)
 │   │   ├── Softprime.Framework.EFCore3/  # Legado mantido
 │   │   ├── Softprime.Framework.EFCore5/  # Legado mantido
 │   │   ├── Softprime.Framework.EF6/      # Legado mantido
