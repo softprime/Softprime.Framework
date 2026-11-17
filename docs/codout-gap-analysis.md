@@ -72,7 +72,7 @@ Os comentários abaixo já existem e foram conferidos nesta revisão. Não serã
 | Baseline pública/binária | [#11 — achado original](https://github.com/softprime/Softprime.Framework/issues/11#issuecomment-6619931579) |
 | Governança de novos componentes | [#13 — achado original](https://github.com/softprime/Softprime.Framework/issues/13#issuecomment-6619933319) |
 
-Ressalvas novas de Security/Mailer serão encaminhadas à #6 e a observação de cache à #4. Os achados não autorizam atualizações, correções ou mudanças comportamentais nessa pesquisa. Issues de planejamento encerradas não representam implementação concluída.
+Complementos novos publicados: [ressalvas de Security/Mailer na #6](https://github.com/softprime/Softprime.Framework/issues/6#issuecomment-6956753486) e [observação de cache na #4](https://github.com/softprime/Softprime.Framework/issues/4#issuecomment-6956754015). Os achados não autorizam atualizações, correções ou mudanças comportamentais nessa pesquisa. Issues de planejamento encerradas não representam implementação concluída.
 
 ## Aprovação e pendências
 
