@@ -288,8 +288,9 @@ A implementação futura será considerada validada quando os 14 projetos import
   - Análise de superfície de API pública em tempo de compilação via Roslyn `PublicApiAnalyzers` (erros `RS0016` e `RS0017`).
   - Validação binária de pacotes e multi-targeting com `EnablePackageValidation=true` contra a baseline `2.0.0` durante o empacotamento ([#17]).
 - **Validação de Samples e Smoke Tests ([#21]):**
-  - Compilação isolada de `samples/**` e execução de testes pontuais com banco SQLite temporário descartável (`sample_smoke.db`).
-  - Auditoria estrita impedindo vazamento de binários ou pacotes de samples para o diretório de distribuição (`artifacts/packages/`).
+  - Implementação do workflow dedicado `.github/workflows/samples-ci.yml` em `windows-latest`.
+  - Compilação isolada de `samples/Softprime.Framework.Samples.sln` e execução da bateria de smoke tests via `samples/run-smoke-tests.ps1` (samples 01 a 07).
+  - Auditoria estrita garantindo que `IsPackable=false` seja respeitado e nenhum pacote de sample seja produzido no pack.
 - **Política Inviolável de Não-Publicação (No-Push no CI):**
   - O pipeline de CI **nunca** executa `dotnet nuget push`. Os pacotes `.nupkg` e `.snupkg` são arquivados estritamente como artefatos temporários no GitHub Actions com retenção de 7 dias para download, inspeção e testes locais. Publicação em produção permanece restrita ao workflow manual de release com aprovação formal (*sign-off*) dos mantenedores ([#12]).
 - **Otimização e Concorrência:** Cache global de pacotes NuGet em `%userprofile%\.nuget\packages`, flags `--no-restore` e `--no-build` em estágios subsequentes e cancelamento automático de execuções redundantes em Pull Requests.

@@ -158,19 +158,15 @@ flowchart TD
 #### Job 4: `samples-smoke-test` (Validação de Samples — Issue #21)
 - **Runner:** `windows-latest`
 - **Shell:** `pwsh`
-- **Depende de:** `package-validation`.
+- **Workflow Implementado:** `.github/workflows/samples-ci.yml` ([#21])
 - **Passos:**
-  1. Configuração do ambiente e SDKs.
-  2. Compilação de todos os projetos contidos no diretório `samples/**`:
+  1. Configuração do ambiente e SDKs .NET (6.0, 8.0 e 10.0).
+  2. Compilação da solution desacoplada de samples:
      ```powershell
      dotnet build samples/Softprime.Framework.Samples.sln -c Release
      ```
-  3. Execução automatizada de *smoke tests* das aplicações de exemplo:
-     - Definição de connection string apontando para banco SQLite em arquivo temporário descartável no Windows:
-       `$dbPath = "$env:TEMP\sample_smoke_$([Guid]::NewGuid()).db"`
-     - Execução do sample em modo de auto-teste ou smoke test com verificação de exit code `0`.
-     - Exclusão do arquivo de banco temporário no bloco `finally`.
-  4. **Verificação de Isolamento:** Auditoria estrita garantindo que os assemblies ou arquivos gerados em `samples/**` não constem no diretório de saída de pacotes NuGet (`artifacts/packages/`).
+  3. Execução automatizada da bateria de *smoke tests* via `samples/run-smoke-tests.ps1` com validação de exit code `0` para todos os samples implementados (`01-Common` a `07-Multitenancy`). Persistência com SQLite em arquivo efêmero em `%TEMP%`.
+  4. **Verificação de Isolamento:** Auditoria estrita garantindo que `IsPackable=false` seja respeitado e nenhum pacote de sample conste no diretório de saída de pacotes NuGet (`artifacts/packages/`).
 
 #### Job 5: `pack-artifacts` (Empacotamento e Arquivamento de Artefatos)
 - **Runner:** `windows-latest`
@@ -384,27 +380,28 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup .NET SDK
+      - name: Setup .NET SDKs
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
+            6.0.x
             8.0.x
             10.0.x
 
       - name: Restore and Build Samples
         run: dotnet build samples/Softprime.Framework.Samples.sln -c Release
 
-      - name: Run Samples Smoke Test (Ephemeral SQLite)
+      - name: Run Samples Smoke Tests (PowerShell)
+        run: ./samples/run-smoke-tests.ps1
+
+      - name: Audit Packaging Isolation
         run: |
-          $tempDb = "$env:TEMP\sample_smoke_$([Guid]::NewGuid()).db"
-          try {
-            $env:SAMPLE_DB_PATH = $tempDb
-            dotnet run --project samples/01-WebApp-Modern/WebApp-Modern.csproj -c Release --no-build -- --smoke-test
-          }
-          finally {
-            if (Test-Path $tempDb) {
-              Remove-Item -Force $tempDb
-            }
+          $outDir = "$env:RUNNER_TEMP\audit-pack"
+          dotnet pack samples/Softprime.Framework.Samples.sln -c Release --no-build -o $outDir
+          $pkgs = Get-ChildItem -Path $outDir -Filter "*Sample*.nupkg" -ErrorAction SilentlyContinue
+          if ($pkgs -and $pkgs.Count -gt 0) {
+            Write-Error "Sample package detected in release directory!"
+            exit 1
           }
 
   pack-artifacts:

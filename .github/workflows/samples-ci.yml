@@ -1,0 +1,76 @@
+name: Samples CI & Smoke Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'release/**'
+    paths:
+      - 'samples/**'
+      - 'src/**'
+      - '.github/workflows/samples-ci.yml'
+  push:
+    branches:
+      - main
+      - 'release/**'
+    paths:
+      - 'samples/**'
+      - 'src/**'
+      - '.github/workflows/samples-ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: samples-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  samples-smoke-test:
+    name: Build & Smoke Test Samples (#21)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            6.0.x
+            8.0.x
+            10.0.x
+
+      - name: NuGet Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: windows-samples-nuget-${{ hashFiles('samples/**/*.csproj', 'samples/Directory.Build.props', 'src/**/*.csproj') }}
+          restore-keys: |
+            windows-samples-nuget-
+
+      - name: Restore Samples Solution
+        run: dotnet restore samples/Softprime.Framework.Samples.sln
+
+      - name: Build Samples Solution
+        run: dotnet build samples/Softprime.Framework.Samples.sln -c Release --no-restore
+
+      - name: Execute Samples Smoke Tests (PowerShell)
+        run: ./samples/run-smoke-tests.ps1
+
+      - name: Audit Packaging Isolation (Ensure samples are excluded from pack)
+        run: |
+          Write-Host "[AUDIT] Verificando isolamento de empacotamento dos samples..."
+          $outputDir = "$env:RUNNER_TEMP\audit-pack"
+          dotnet pack samples/Softprime.Framework.Samples.sln -c Release --no-build -o $outputDir
+
+          $samplePackages = Get-ChildItem -Path $outputDir -Filter "*Sample*.nupkg" -ErrorAction SilentlyContinue
+          if ($samplePackages -and $samplePackages.Count -gt 0) {
+            Write-Error "FALHA DE ISOLAMENTO: Pacotes NuGet de samples foram gerados indevidamente:"
+            $samplePackages | ForEach-Object { Write-Error " - $($_.Name)" }
+            exit 1
+          }
+
+          Write-Host "[AUDIT_PASSED] Nenhum pacote de sample foi produzido. IsPackable=false respeitado."

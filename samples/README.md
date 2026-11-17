@@ -24,25 +24,41 @@ Cada diretório abaixo é um projeto autocontido focado em um componente ou cen�
 
 ## Diretrizes e Governança
 
-1. **Solution Dedicada:** Os samples são agrupados na solution desacoplada `samples/Softprime.Framework.Samples.sln`.
+1. **Solution Dedicada e Desacoplada:** Os samples são agrupados na solution desacoplada `samples/Softprime.Framework.Samples.sln`, contendo exclusivamente os projetos de sample (`Softprime.Samples.*`). As referências a `src/` são mantidas via `ProjectReference`, compilando apenas os alvos modernos necessários (`netstandard2.0`/`netstandard2.1`).
 2. **Isolamento de Pacotes:** O arquivo `samples/Directory.Build.props` aplica `<IsPackable>false</IsPackable>` e `<GeneratePackageOnBuild>false</GeneratePackageOnBuild>`, impedindo que qualquer exemplo gere pacotes NuGet inadvertidamente.
 3. **Contrato Canônico de README:** Cada sample segue o padrão fixo de 7 seções documentado em [`docs/samples-design.md`](../docs/samples-design.md).
-4. **Smoke Test Integrado:** Todos os samples suportam a flag `--smoke-test` para validação rápida no pipeline de CI com código de saída `0` para sucesso.
+4. **Smoke Test Integrado:** Todos os samples suportam a flag `--smoke-test` para validação rápida com código de saída `0` para sucesso. O script unificado `samples/run-smoke-tests.ps1` executa a bateria completa.
+5. **Automação no CI (GitHub Actions):** O workflow [`.github/workflows/samples-ci.yml`](../.github/workflows/samples-ci.yml) compila a solution inteira e roda os smoke tests em runner Windows (`windows-latest`) a cada Pull Request e push.
 
 ---
 
-## Como Compilar e Executar Todos os Samples
+## Como Compilar e Executar os Samples
 
-Para compilar a solution inteira de samples:
+### 1. Compilação da Solution de Samples
+
 ```powershell
 dotnet build samples/Softprime.Framework.Samples.sln -c Release
 ```
 
-Para rodar o smoke test dos samples implementados:
+---
+
+### 2. Execução da Bateria Completa de Smoke Tests
+
+Via script PowerShell unificado (compatível com Windows PowerShell 5.1 e PowerShell Core):
+```powershell
+powershell -ExecutionPolicy Bypass -File ./samples/run-smoke-tests.ps1
+# ou em PowerShell Core:
+pwsh ./samples/run-smoke-tests.ps1
+```
+
+---
+
+### 3. Execução Individual de Smoke Tests por Sample
+
 ```powershell
 dotnet run --project samples/01-Common/Softprime.Samples.Common.csproj --framework net10.0 -- --smoke-test
 dotnet run --project samples/02-Domain/Softprime.Samples.Domain.csproj --framework net10.0 -- --smoke-test
-dotnet run --project samples/03-Data-EFCore/Softprime.Samples.DataEFCore.csproj -- --smoke-test
+dotnet run --project samples/03-Data-EFCore/Softprime.Samples.DataEFCore.csproj --framework net6.0 -- --smoke-test
 dotnet run --project samples/04-WebApi/Softprime.Samples.WebApi.csproj --framework net10.0 -- --smoke-test
 dotnet run --project samples/05-ApiClient/Softprime.Samples.ApiClient.csproj --framework net10.0 -- --smoke-test
 dotnet run --project samples/06-Mailer/Softprime.Samples.Mailer.csproj --framework net10.0 -- --smoke-test
