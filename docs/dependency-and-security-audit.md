@@ -17,7 +17,7 @@ Este documento consolida a auditoria completa das dependências externas e dos c
    - `NHibernate 5.3.5` (`Softprime.Framework.NH`): Alta severidade ([GHSA-fg4q-ccq8-3r5q](https://github.com/advisories/GHSA-fg4q-ccq8-3r5q) - SQL injection em mappings, HQL e utilitários). Correção: `5.7.1` (mantendo-se na linha 5.x estável compatível com `net48` e `netstandard2.0`).
 2. **Dependência em Pré-Release Histórico (`RazorLight`):**
    - `Softprime.Framework.Mailer` utiliza `RazorLight 2.0.0-rc.3` acoplado diretamente em `SoftprimeMailer`. A versão estável candidata é `2.3.1`. O comparativo arquitetural com o Codout ([#17]/[#22]) indica a necessidade de **desacoplar o contrato de envio do mecanismo de templates** através de uma abstração (`ITemplateRenderer`).
-3. **Pacotes Deprecados:**
+3. **DependÃªncias a revisar:**
    - `EntityFramework 6.4.4` (`Softprime.Framework.EF6`): Sinalizado como `Legacy` pelo NuGet. Atualização recomendada: `EntityFramework 6.5.1` (adiciona suporte oficial a runtimes modernos preservando total compatibilidade com `net48`).
 4. **Fragilidades e Invariantes Criptográficas em `Common.Security`:**
    - `CryptoString`: Cifra DES 56-bit com chave e IV estáticos hardcoded. **Invariante:** `Decrypt(string)` deve permanecer capaz de decifrar payloads antigos. Introdução planejada de `AesCryptoString` com auto-detecção por prefixo de envelope (`$aes$v1$`).
@@ -38,7 +38,7 @@ Revisão documental das referências e fontes oficiais em 2026-11-17. Não há l
 | `RazorLight` | `Mailer` | 2.0.0-rc.3 | `netstandard2.0;netstandard2.1;net48` | `2.3.1` | Pré-release histórico | **Médio** (acoplamento) | Isolar contrato (`ITemplateRenderer`) e atualizar engine para `2.3.1`. |
 | `NHibernate` | `NH` | 5.3.5 | `netstandard2.0;netstandard2.1;net48` | `5.7.1` | **Alta** (GHSA-fg4q-ccq8-3r5q) | **Médio** | Atualizar para `5.7.1` na família 5.x. Manter pacote legado congelado. |
 | `FluentNHibernate` | `NH` | 3.1.0 | `netstandard2.0;netstandard2.1;net48` | `3.5.0` | Estável | **Baixo** | Atualizar em conjunto com o NHibernate 5.7.1. |
-| `EntityFramework` | `EF6` | 6.4.4 | `netstandard2.1;net48` | `6.5.1` | `Legacy` (NuGet alert) | **Mínimo** | Atualizar para `6.5.1` (possui asset compatível com net48; regressão ainda a validar). |
+| `EntityFramework` | `EF6` | 6.4.4 | `netstandard2.1;net48` | `6.5.1` | DepreciaÃ§Ã£o nÃ£o comprovada | **Mínimo** | Atualizar para `6.5.1` (possui asset compatível com net48; regressão ainda a validar). |
 | `AWSSDK.SimpleEmailV2` | `Mailer.AWS` | 3.5.1.25 | `netstandard2.0;netstandard2.1;net48` | `3.7.x` (linha v3; suporte a confirmar) | Desatualizado (2021) | **Baixo** | Atualizar para a versão mais recente da linha v3.7 (evitar v4 por breaking changes de API). |
 | `SendGrid` | `Mailer.SendGrid` | 9.22.0 | `netstandard2.0;netstandard2.1;net48` | `9.29.3` | Estável | **Mínimo** | Atualização menor/patch para estabilidade de TLS e HTTP. |
 | `System.ComponentModel.Annotations` | `Common`, `Domain`, `Multitenancy` | 5.0.0 | Multi-target | `5.0.0` | Estável | **Nenhum** | Manter em `netstandard2.0` e `net48`; suprimir em `net10.0;net8.0` (fornecido pelo runtime). |
@@ -51,7 +51,7 @@ Revisão documental das referências e fontes oficiais em 2026-11-17. Não há l
 - **Problema:** A versão 12.0.3 possui vulnerabilidade conhecida em que entradas profundamente aninhadas podem causar consumo excessivo de CPU/memória ou StackOverflow conforme o caminho de serialização, configurando Denial of Service (DoS).
 - **Compatibilidade com Targets (#3):** O `Newtonsoft.Json 13.0.3` tem suporte oficial a `netstandard2.0`, `net45`, `net6.0+`. Atende perfeitamente ao target `netstandard2.0` aprovado para `Softprime.Framework.Api.Client`.
 - **Avaliação de `System.Text.Json`:**
-  - O runtime moderno (.NET 8 e .NET 10) possui `System.Text.Json` integrado com alto desempenho .
+  - O runtime moderno (.NET 8 e .NET 10) possui `System.Text.Json` integrado com alto desempenho.
   - No entanto, `JsonExtensions.cs` expõe métodos de extensão utilitários (`ReadAsAsync`, `PostAsJsonAsync`, `PutAsJsonAsync`) que utilizam convenções do Newtonsoft (ex.: `NullValueHandling.Ignore`).
   - **Decisão:** Atualizar `Newtonsoft.Json` para `13.0.3` na baseline de compatibilidade universal. Para futuros alvos modernos (`net10.0`), desacoplar a serialização via interface de opções ou permitir que o consumidor escolha o serializador sem impor quebra de contrato aos consumidores `net48`.
 
