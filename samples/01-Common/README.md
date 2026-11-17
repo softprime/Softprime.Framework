@@ -17,7 +17,7 @@ Este sample ensina de forma prática como utilizar os recursos essenciais do `So
 
 ## 2. Pré-requisitos
 
-- [.NET SDK 10.0](https://dotnet.microsoft.com/) ou [.NET SDK 8.0](https://dotnet.microsoft.com/) instalado.
+- SDK .NET 10.0.401 (latestPatch) instalado para compilaÃ§Ã£o e runtimes dos targets executados.
 - **Autonomia Total:** Nenhuma credencial externa, banco de dados ou serviço em nuvem é necessário. Execução 100% local e offline.
 
 ---
