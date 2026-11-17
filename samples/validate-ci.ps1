@@ -25,7 +25,11 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Smoke tests com ProjectReference falharam.' }
 
     # Versao exclusiva e cache vazio impedem consumir pacote antigo.
-    Invoke-Dotnet @('pack', 'src/Softprime.Framework.All.sln', '-c', 'Release', '-o', $feed, "-p:Version=$version", "-p:PackageVersion=$version")
+    $production = 'src/Softprime.Framework.All.sln'
+    $versionProps = @("-p:Version=$version", "-p:PackageVersion=$version")
+    Invoke-Dotnet (@('restore', $production) + $versionProps)
+    Invoke-Dotnet (@('build', $production, '-c', 'Release', '--no-restore') + $versionProps)
+    Invoke-Dotnet (@('pack', $production, '-c', 'Release', '--no-build', '--no-restore', '-o', $feed) + $versionProps)
     $settings = New-Object System.Xml.XmlDocument
     $settings.LoadXml('<configuration><packageSources><clear /></packageSources><packageSourceMapping /></configuration>')
     foreach ($source in @(@('local', $feed), @('nuget.org', 'https://api.nuget.org/v3/index.json'))) {
