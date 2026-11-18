@@ -16,7 +16,7 @@ Cada diretório abaixo é um projeto autocontido focado em um componente ou cen�
 | [`04-WebApi`](04-WebApi/) | `Softprime.Samples.WebApi` | Endpoints REST, contratos CRUD (`IApi`), DTOs, validação e `ApiKeyAuthorizeFilter` | ✅ Implementado |
 | [`05-ApiClient`](05-ApiClient/) | `Softprime.Samples.ApiClient` | Cliente HTTP tipado, paginação, headers `ApiKey`/`TenantKey`, `ApiException` e timeout | ✅ Implementado |
 | [`06-Mailer`](06-Mailer/) | `Softprime.Samples.Mailer` | Templates Razor com despacho em memória (`FakeMailerDispatcher`) | ✅ Implementado |
-| `07-Multitenancy` | `Softprime.Samples.Multitenancy` | Resolução por cabeçalho/subdomínio e rejeição de tenant inválido | ⏳ Planejado |
+| [`07-Multitenancy`](07-Multitenancy/) | `Softprime.Samples.Multitenancy` | Resolução por cabeçalho/query/subdomínio, cache, isolamento e rejeição de tenant inválido | ✅ Implementado |
 | `08-CompleteSample` | `Softprime.Samples.CompleteSample` | Aplicação corporativa integrada ponta a ponta | ⏳ Planejado |
 | `99-Net48-Consumo` | `Softprime.Samples.Net48Consumo` | Validação de consumo em .NET Framework 4.8 | ⏳ Opcional |
 
@@ -46,4 +46,5 @@ dotnet run --project samples/03-Data-EFCore/Softprime.Samples.DataEFCore.csproj 
 dotnet run --project samples/04-WebApi/Softprime.Samples.WebApi.csproj --framework net10.0 -- --smoke-test
 dotnet run --project samples/05-ApiClient/Softprime.Samples.ApiClient.csproj --framework net10.0 -- --smoke-test
 dotnet run --project samples/06-Mailer/Softprime.Samples.Mailer.csproj --framework net10.0 -- --smoke-test
+dotnet run --project samples/07-Multitenancy/Softprime.Samples.Multitenancy.csproj --framework net10.0 -- --smoke-test
 ```
