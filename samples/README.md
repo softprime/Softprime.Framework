@@ -14,7 +14,7 @@ Cada diretório abaixo é um projeto autocontido focado em um componente ou cen�
 | [`02-Domain`](02-Domain/) | `Softprime.Samples.Domain` | Entidades, Value Objects, DomainSignature, lifecycle | ✅ Implementado |
 | [`03-Data-EFCore`](03-Data-EFCore/) | `Softprime.Samples.DataEFCore` | Repositório genérico, Unit of Work, paginação (SQLite local via EFCore5/`net6.0` até #5) | ✅ Implementado |
 | [`04-WebApi`](04-WebApi/) | `Softprime.Samples.WebApi` | Endpoints REST, contratos CRUD (`IApi`), DTOs, validação e `ApiKeyAuthorizeFilter` | ✅ Implementado |
-| `05-ApiClient` | `Softprime.Samples.ApiClient` | Cliente HTTP tipado, tratamento de erros, cancelamento | ⏳ Planejado |
+| [`05-ApiClient`](05-ApiClient/) | `Softprime.Samples.ApiClient` | Cliente HTTP tipado, paginação, headers `ApiKey`/`TenantKey`, `ApiException` e timeout | ✅ Implementado |
 | `06-Mailer` | `Softprime.Samples.Mailer` | Templates Razor com despacho em memória (`FakeMailerDispatcher`) | ⏳ Planejado |
 | `07-Multitenancy` | `Softprime.Samples.Multitenancy` | Resolução por cabeçalho/subdomínio e rejeição de tenant inválido | ⏳ Planejado |
 | `08-CompleteSample` | `Softprime.Samples.CompleteSample` | Aplicação corporativa integrada ponta a ponta | ⏳ Planejado |
@@ -44,4 +44,5 @@ dotnet run --project samples/01-Common/Softprime.Samples.Common.csproj --framewo
 dotnet run --project samples/02-Domain/Softprime.Samples.Domain.csproj --framework net10.0 -- --smoke-test
 dotnet run --project samples/03-Data-EFCore/Softprime.Samples.DataEFCore.csproj -- --smoke-test
 dotnet run --project samples/04-WebApi/Softprime.Samples.WebApi.csproj --framework net10.0 -- --smoke-test
+dotnet run --project samples/05-ApiClient/Softprime.Samples.ApiClient.csproj --framework net10.0 -- --smoke-test
 ```
