@@ -1,68 +1,115 @@
 # Stack Tecnológica
 
-> **Nota de planejamento:** esta página descreve o **estado atual verificado** do repositório. As diretrizes de modernização de targets ([#3]), a política de versionamento e publicação ([#12]) e a especificação da esteira de CI ([#8]) foram formalizadas e aprovadas em [`docs/target-compatibility-matrix.md`](../../docs/target-compatibility-matrix.md), [`docs/nuget-versioning-policy.md`](../../docs/nuget-versioning-policy.md), [`docs/ci-pipeline-spec.md`](../../docs/ci-pipeline-spec.md) e [`docs/modernization-plan.md`](../../docs/modernization-plan.md). Veja a seção "Diretrizes técnicas" para as regras em vigor.
+> **Nota de governança:** este documento estabelece as diretrizes técnicas do Softprime.Framework. Para evitar contradições, ele distingue formalmente o **Estado Atual Verificado (Baseline 2.0.0)** da **Arquitetura Alvo e Regras para Novos Projetos**, incorporando as decisões aprovadas nas issues [#3] (Targets), [#12] (Versionamento SemVer), [#9] (Metadados Centralizados), [#8] (CI/CD Windows), [#7] (Estratégia de Testes) e [#17]/[#22] (Governança e Samples).
 
-## Plataforma
+---
 
+## 1. Estado Atual Verificado (Baseline 2.0.0)
+
+Esta seção descreve a realidade factual do repositório no baseline 2.0.0:
+
+### Plataforma e Targets Históricos
 - **Linguagem:** C#
-- **Alvos:** `netstandard2.0`, `netstandard2.1` e, em alguns projetos, `net48`.
+- **SDK de projeto:** `Microsoft.NET.Sdk` (formato SDK-style `.csproj`).
+- **Alvos atuais dos 14 projetos legados:** `netstandard2.0`, `netstandard2.1` e, em alguns projetos, `net48`.
   - `Softprime.Framework.EFCore5` tem como alvo apenas `netstandard2.1`.
   - `Softprime.Framework.EF6` tem como alvo `netstandard2.1` e `net48`.
-- **SDK de projeto:** `Microsoft.NET.Sdk` (formato SDK-style `.csproj`).
-- **Versão dos pacotes:** `2.0.0` (mantenha consistente entre os projetos).
-- **Empacotamento:** `GeneratePackageOnBuild=true` — cada build em Release gera um `.nupkg`. Metadados NuGet (Authors, Company, Description em português, PackageIcon `logo-nuget.png`, licença `LICENSE.txt`) são definidos em cada `.csproj`.
+  - Projetos com fatia nativa `net48`: `Domain`, `DAL`, `EF6`, `NH`, `Mailer`.
+- **Versão dos pacotes:** `2.0.0` (atualmente duplicada como propriedade individual `<Version>2.0.0</Version>` em cada um dos 14 `.csproj`).
+- **Empacotamento:** `GeneratePackageOnBuild=true` duplicado em cada `.csproj`. Metadados NuGet (`Authors`, `Company`, `Description` em português, `PackageIcon` `logo-nuget.png`, licença `LICENSE.txt`) definidos individualmente.
 
-## Principais dependências por projeto
-
-- **Common:** `System.ComponentModel.Annotations`
-- **Domain:** `System.ComponentModel.Annotations`
+### Dependências Factuais por Projeto
+- **Common:** `System.ComponentModel.Annotations` 5.0.0
+- **Domain:** `System.ComponentModel.Annotations` 5.0.0
 - **EFCore3:** `Microsoft.EntityFrameworkCore` 3.1.x
 - **EFCore5:** `Microsoft.EntityFrameworkCore` 5.0.x
 - **EF6:** `EntityFramework` 6.4.x
 - **NH:** `NHibernate` 5.3.x, `FluentNHibernate` 3.1.x
 - **Api:** `Microsoft.AspNetCore.Mvc` 2.2.x
-- **Api.Client:** `Newtonsoft.Json` 12.x
+- **Api.Client:** `Newtonsoft.Json` 12.0.x
 - **Mailer:** `RazorLight` 2.0.0-rc.3
 - **Mailer.AWS:** `AWSSDK.SimpleEmailV2`
 - **Mailer.SendGrid:** `SendGrid` 9.x
 - **Multitenancy:** `Microsoft.AspNetCore` 2.2.x, `Microsoft.Extensions.Caching.Memory`, `System.ComponentModel.Annotations`
 
-## Build e empacotamento
+### Build e Empacotamento
+A solution principal que compila os 14 projetos legados é `src/Softprime.Framework.All.sln`.
 
-A solution principal é `src/Softprime.Framework.All.sln`.
-
-```bash
-# Restaurar + compilar tudo
+```powershell
+# Restaurar e compilar toda a solution
 dotnet build src/Softprime.Framework.All.sln
 
-# Release (gera os .nupkg)
+# Compilar em Release (gera os pacotes .nupkg locais em bin/Release)
 dotnet build src/Softprime.Framework.All.sln -c Release
 ```
 
-Observações para o ambiente Windows/PowerShell:
-- Use `;` como separador de comandos (não `&&`).
-- Evite iniciar processos de longa duração de forma bloqueante.
+---
 
-## Diretrizes técnicas
+## 2. Arquitetura Alvo e Regras para Novos Projetos (Aprovadas)
 
-- Novos projetos devem ser SDK-style e seguir o padrão de metadados NuGet dos projetos existentes.
-- **Alvos de projetos e pacotes:** Siga estritamente a [Matriz de Compatibilidade e Estratégia de Targets](../../docs/target-compatibility-matrix.md) aprovada na issue [#3]:
-  - **Contratos e Utilitários Compartilhados:** `netstandard2.0` universal (preservando `net48` nativo onde já existir). `netstandard2.1` **não** deve ser utilizado em novos projetos e será descontinuado nos pacotes compartilhados (não suporta `net48`).
-  - **Implementações Web e Modernas:** Multi-target **`net10.0;net8.0`** (usando `<FrameworkReference Include="Microsoft.AspNetCore.App" />`), cobrindo o alvo de modernização primário (.NET 10 LTS) e aplicações corporativas em transição (.NET 8 LTS).
-  - **Implementações de Persistência:** Linhas legadas (`EF6`, `EFCore3`, `EFCore5`, `NH`) permanecem preservadas e isoladas; modernização de EF Core ocorre exclusivamente no novo pacote `Softprime.Framework.EFCore10` (`net10.0;net8.0`).
-- **Versão e publicação de pacotes:** Siga estritamente a [Política de Versionamento, Suporte e Publicação NuGet](../../docs/nuget-versioning-policy.md) aprovada na issue [#12]:
-  - Adoção de **SemVer 2.0.0** rigoroso com critérios objetivos para MAJOR, MINOR e PATCH vinculados à análise de API surface.
-  - Distinção entre versão de pacote e target framework: adicionar target retrocompatível é MINOR.
-  - **Coexistência de Linhas:** Linha 2.x mantida para correções críticas e segurança de legados em `net48`; modernização segue na linha 3.0.0.
-  - **Publicação:** Exclusiva sob aprovação manual com sign-off e regra inviolável de imutabilidade (nunca sobrescrever versões publicadas).
-- **Esteira de Integração Contínua (CI):** Siga a [Especificação da Esteira de CI (`docs/ci-pipeline-spec.md`)](../../docs/ci-pipeline-spec.md) aprovada na issue [#8]:
-  - **Topologia Padronizada 100% Windows:** `windows-latest` adotado de ponta a ponta com PowerShell Core (`pwsh`), assegurando paridade com o ambiente corporativo (IIS/Windows Server), suporte nativo a `net48` e aos runtimes modernos (.NET 8/10) sem falsos positivos de Linux.
-  - **Gates de Compatibilidade:** Validação obrigatória de superfícies de API pública via Roslyn `PublicApiAnalyzers` e validação binária de pacotes com `EnablePackageValidation` contra baseline `2.0.0` no pack ([#11], [#17]).
-  - **Validação de Samples (#21):** Compilação de `samples/**` e smoke tests pontuais com SQLite efêmero em arquivo temporário, com auditoria contra vazamento de pacotes.
-  - **Invariante No-Push:** Bloqueio formal de publicação automática de pacotes no CI contínuo; geração estrita de artefatos de compilação temporários (retenção 7 dias).
-- Ao adicionar dependências, prefira versões pinadas, estáveis (evite pré-release como o atual `RazorLight` rc) e compatíveis com os alvos escolhidos.
-- Mantenha a separação entre projetos de abstração e projetos de implementação; não adicione dependência de um ORM específico num projeto de contrato.
+Todas as novas implementações, correções e modernizações devem seguir estritamente as decisões normativas vigentes:
+
+### 2.1. Matriz de Targets e Compatibilidade ([#3])
+Documento normativo: [`docs/target-compatibility-matrix.md`](../../docs/target-compatibility-matrix.md).
+
+- **Contratos e Utilitários Compartilhados (`Common`, `DAL`, `Domain`, `Api.Dto`, `Mailer`):**
+  - Alvo universal: **`netstandard2.0`** (garante consumo seguro tanto em .NET moderno quanto em .NET Framework).
+  - Preservar fatia nativa `net48` onde já existir para evitar atrito com assemblies de fachada (*facades*).
+  - **Proibição expressa:** **`netstandard2.1` NÃO deve ser utilizado como alvo em novos projetos** e será descontinuado nos pacotes compartilhados (pois não possui suporte em `.NET Framework 4.8`).
+- **Implementações Web e Modernas (`Api`, `Multitenancy` e novos componentes modernos):**
+  - Multi-targeting obrigatório: **`net10.0;net8.0`**.
+  - Devem referenciar o ASP.NET Core moderno via framework compartilhado: `<FrameworkReference Include="Microsoft.AspNetCore.App" />` (eliminando referências legadas fora de suporte como `Microsoft.AspNetCore 2.2.0`).
+- **Implementações de Persistência:**
+  - As linhas legadas (`EF6`, `EFCore3`, `EFCore5`, `NH`) permanecem congeladas e isoladas para sustentação do ecossistema existente.
+  - A modernização da camada de dados ocorre exclusivamente através de um novo pacote independente: **`Softprime.Framework.EFCore10`** com targets `net10.0;net8.0` ([#5]).
+
+### 2.2. Política de Versionamento e Metadados ([#12], [#9])
+Documento normativo: [`docs/nuget-versioning-policy.md`](../../docs/nuget-versioning-policy.md).
+
+- **Adoção de SemVer 2.0.0 Estrito:**
+  - `MAJOR`: Quebra binária de API, quebra de contrato comportamental ou perda/remoção de target suportado.
+  - `MINOR`: Novas APIs ou funcionalidades retrocompatíveis, adição de novo target sem quebra de anteriores.
+  - `PATCH`: Correções de bugs internos e segurança sem alteração de assinaturas públicas.
+- **Coexistência de Linhas:**
+  - **Linha 2.x (`2.0.x`, `2.1.x`):** Reservada para sustentação, correções críticas e segurança de sistemas corporativos em `.NET Framework 4.8`.
+  - **Linha 3.x (`3.0.0+`):** Adotada para os pacotes com runtimes modernos (`net10.0;net8.0`) e atualizações estruturais de quebra de compatibilidade.
+- **Centralização de Metadados ([#9]):**
+  - Novos projetos e a modernização da solução adotam a centralização de propriedades comuns (`Authors`, `Company`, `PackageLicenseFile`, `PackageIcon`, `RepositoryUrl`) em `Directory.Build.props` na raiz de `src/`.
+- **Imutabilidade e Governança:**
+  - Versões publicadas em feeds NuGet são absolutamente imutáveis. Publicação somente via aprovação manual com sign-off.
+
+### 2.3. Esteira de Integração Contínua — CI ([#8])
+Documento normativo: [`docs/ci-pipeline-spec.md`](../../docs/ci-pipeline-spec.md).
+
+- **Topologia Padronizada 100% Windows:**
+  - Execução em runners `windows-latest` via PowerShell Core (`pwsh`), assegurando compilação nativa de `net48`, .NET 8 e .NET 10 sem falsos positivos de ambientes Linux.
+- **Gates Obrigatórios de Qualidade:**
+  - Validação de APIs públicas via Roslyn `Microsoft.CodeAnalysis.PublicApiAnalyzers` ([#11]).
+  - Validação binária de compatibilidade no empacotamento via `EnablePackageValidation` contra o baseline `2.0.0` ([#11], [#17]).
+  - Validação de samples com smoke tests temporários em SQLite ([#21]).
+  - **Invariante No-Push:** O CI não publica pacotes automaticamente. Artefatos de build gerados têm retenção temporária.
+
+### 2.4. A Regra dos Três Pilares para Novos Componentes ([#17]/[#22], [#7], [#18]/[#23])
+Detalhada no [Guia de Contribuição (`CONTRIBUTING.md`)](../../CONTRIBUTING.md), qualquer novo componente exige:
+1. **Testes Automatizados:** Projeto correspondente em `tests/<NomeDoProjeto>.Tests` cobrindo comportamento e regressão.
+2. **Governança de API Pública:** Comentários XML em português e aprovação formal de superfícies de API.
+3. **Exemplo Didático Executável:** Projeto demonstrativo em `samples/` autossuficiente e sem segredos/infraestrutura paga.
+
+### 2.5. Boas Práticas de Dependências e Arquitetura
+- Dependências externas devem ser sempre **versões pinadas, estáveis e com suporte ativo** (eliminando pré-releases como o `RazorLight` rc).
+- Respeitar rigorosamente a separação entre projetos de contrato (`DAL`, `Domain`, `Api.Dto`, `Mailer`) e implementações concretas de terceiros; nunca adicionar dependência de ORM ou tecnologia específica dentro de projetos de abstração.
+
+---
 
 [#3]: https://github.com/softprime/Softprime.Framework/issues/3
+[#5]: https://github.com/softprime/Softprime.Framework/issues/5
+[#7]: https://github.com/softprime/Softprime.Framework/issues/7
 [#8]: https://github.com/softprime/Softprime.Framework/issues/8
+[#9]: https://github.com/softprime/Softprime.Framework/issues/9
+[#11]: https://github.com/softprime/Softprime.Framework/issues/11
 [#12]: https://github.com/softprime/Softprime.Framework/issues/12
+[#17]: https://github.com/softprime/Softprime.Framework/issues/17
+[#18]: https://github.com/softprime/Softprime.Framework/issues/18
+[#21]: https://github.com/softprime/Softprime.Framework/issues/21
+[#22]: https://github.com/softprime/Softprime.Framework/issues/22
+[#23]: https://github.com/softprime/Softprime.Framework/issues/23
