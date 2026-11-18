@@ -8,8 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\api\Softprime.Framework.Api\Softprime.Framework.Api.csproj" />
-    <ProjectReference Include="..\..\src\api\Softprime.Framework.Api.Dto\Softprime.Framework.Api.Dto.csproj" />
+    <ProjectReference Include="..\..\src\api\Softprime.Framework.Api\Softprime.Framework.Api.csproj" Condition="'$(UseInstalledPackages)' != 'true'" />
+    <PackageReference Include="Softprime.Framework.Api" Version="$(FrameworkPackageVersion)" Condition="'$(UseInstalledPackages)' == 'true'" />
+    <ProjectReference Include="..\..\src\api\Softprime.Framework.Api.Dto\Softprime.Framework.Api.Dto.csproj" Condition="'$(UseInstalledPackages)' != 'true'" />
+    <PackageReference Include="Softprime.Framework.Api.Dto" Version="$(FrameworkPackageVersion)" Condition="'$(UseInstalledPackages)' == 'true'" />
   </ItemGroup>
 
 </Project>

@@ -8,7 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\multitenant\Softprime.Framework.Multitenancy\Softprime.Framework.Multitenancy.csproj" />
+    <ProjectReference Include="..\..\src\multitenant\Softprime.Framework.Multitenancy\Softprime.Framework.Multitenancy.csproj" Condition="'$(UseInstalledPackages)' != 'true'" />
+    <PackageReference Include="Softprime.Framework.Multitenancy" Version="$(FrameworkPackageVersion)" Condition="'$(UseInstalledPackages)' == 'true'" />
   </ItemGroup>
 
 </Project>
