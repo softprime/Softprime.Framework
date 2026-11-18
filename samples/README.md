@@ -11,7 +11,7 @@ Cada diretório abaixo é um projeto autocontido focado em um componente ou cen�
 | Diretório | Projeto | Componentes Exercitados | Status |
 |---|---|---|---|
 | [`01-Common`](01-Common/) | `Softprime.Samples.Common` | Extensões, validação (CPF/CNPJ), helpers, criptografia | ✅ Implementado |
-| `02-Domain` | `Softprime.Samples.Domain` | Entidades, Value Objects, DomainSignature, lifecycle | ⏳ Planejado |
+| [`02-Domain`](02-Domain/) | `Softprime.Samples.Domain` | Entidades, Value Objects, DomainSignature, lifecycle | ✅ Implementado |
 | `03-Data-EFCore` | `Softprime.Samples.DataEFCore` | Repositório genérico, Unit of Work, paginação (SQLite local) | ⏳ Planejado |
 | `04-WebApi` | `Softprime.Samples.WebApi` | Endpoints REST, contratos CRUD (`IApi`), DTOs, filtros | ⏳ Planejado |
 | `05-ApiClient` | `Softprime.Samples.ApiClient` | Cliente HTTP tipado, tratamento de erros, cancelamento | ⏳ Planejado |
@@ -38,7 +38,8 @@ Para compilar a solution inteira de samples:
 dotnet build samples/Softprime.Framework.Samples.sln -c Release
 ```
 
-Para rodar o smoke test do sample `01-Common`:
+Para rodar o smoke test dos samples implementados:
 ```powershell
 dotnet run --project samples/01-Common/Softprime.Samples.Common.csproj -- --smoke-test
+dotnet run --project samples/02-Domain/Softprime.Samples.Domain.csproj -- --smoke-test
 ```
