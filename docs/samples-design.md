@@ -1,7 +1,9 @@
 # Padrão Arquitetural de Samples e Contrato Didático (DX) — Softprime.Framework
 
-> **Documento normativo de arquitetura e governança de DX · Entregável da Issue [#18]** (Frente B — Samples e Developer Experience).  
-> Pertencente à issue-mãe **[#23]** e alinhado à [Matriz de Compatibilidade e Targets (`docs/target-compatibility-matrix.md`)](target-compatibility-matrix.md) ([#3]), à [Estratégia de Testes (`docs/test-strategy.md`)](test-strategy.md) ([#7]), à [Especificação da Esteira de CI (`docs/ci-pipeline-spec.md`)](ci-pipeline-spec.md) ([#8]), à [Política de Versionamento NuGet (`docs/nuget-versioning-policy.md`)](nuget-versioning-policy.md) ([#12]) e às [Diretrizes de Governança (`CONTRIBUTING.md`)](../CONTRIBUTING.md) ([#13]).  
+> **Documento normativo de arquitetura e governança de DX · Entregável da Issue [#18]** (Frente B — Samples e Developer Experience).
+>
+> Pertencente à issue-mãe **[#23]** e alinhado à [Matriz de Compatibilidade e Targets (`docs/target-compatibility-matrix.md`)](target-compatibility-matrix.md) ([#3]), à [Estratégia de Testes (`docs/test-strategy.md`)](test-strategy.md) ([#7]), à [Especificação da Esteira de CI (`docs/ci-pipeline-spec.md`)](ci-pipeline-spec.md) ([#8]), à [Política de Versionamento NuGet (`docs/nuget-versioning-policy.md`)](nuget-versioning-policy.md) ([#12]) e às [Diretrizes de Governança (`CONTRIBUTING.md`)](../CONTRIBUTING.md) ([#13]).
+>
 > Data de aprovação: 2026-11-06 · Branch: `docs/issue-18-padrao-samples-dx`
 
 ---
@@ -95,7 +97,7 @@ Explicação clara e objetiva (1 a 3 parágrafos) do conceito arquitetural demon
 ## 2. Pré-requisitos
 - SDK 10.0.401 (latestPatch) e runtimes executados.
 - Sistema Operacional suportado (Windows / Linux / macOS).
-- Pacotes do framework necessários e versões de referência.
+- Pacotes do framework necessários, versões e fontes NuGet. Se o sample usar `ProjectReference`, registrar a justificativa e como validar o pacote empacotado.
 
 ## 3. Comandos de execução
 Instruções diretas para restaurar, compilar e rodar a aplicação:
@@ -142,21 +144,19 @@ Tabela ou lista com falhas comuns de ambiente (ex.: porta ocupada, banco de dado
 
 ## 5. Regras de Referência a Pacotes e Consumo Real
 
-Para equilibrar a facilidade de desenvolvimento no monorepo com a garantia de que os pacotes publicados funcionam no mundo real, a Frente B adota uma estratégia em duas camadas:
+### 5.1. Consumo Preferencial via NuGet (`PackageReference`)
 
-### 5.1. Camada de Desenvolvimento Local (`ProjectReference`)
-Durante o desenvolvimento local no repositório, os samples referenciam os projetos em `src/` via `ProjectReference` condicional para feedback imediato e navegação direta no código:
+Use `PackageReference` como padrão para novos samples e priorize esse modo nos comandos de execução do README. Consuma pacotes NuGet gerados localmente pelo `dotnet pack` ou versões de pré-lançamento de um feed NuGet. O README deve identificar a versão e a fonte usadas no restore.
 
-```xml
-<ItemGroup Condition="'$(UseInstalledPackages)' != 'true'">
-  <ProjectReference Include="..\..\src\general\Softprime.Framework.Common\Softprime.Framework.Common.csproj" />
-</ItemGroup>
-```
+### 5.2. Exceção para Desenvolvimento Local (`ProjectReference`)
 
-### 5.2. Camada de Validação no CI e Consumo Real (`PackageReference`)
-Na esteira de integração contínua (CI) e em testes formais de consumo de pacotes ([#21]), os samples são validados consumindo os arquivos `.nupkg` reais gerados na compilação em `artifacts/packages/`:
-- O comando `dotnet pack src/Softprime.Framework.All.sln -c Release --output artifacts/packages/` produz os pacotes locais.
-- Os samples executam `dotnet build samples/Softprime.Framework.Samples.sln --source artifacts/packages/ -p:UseInstalledPackages=true`, garantindo que os metadados do pacote, referências transitivas e empacotamento estão 100% íntegros.
+Use `ProjectReference` somente quando houver uma necessidade de desenvolvimento local, como depurar alterações no framework antes de gerar o pacote. Justifique a exceção no README, documente como executar o sample com `PackageReference` e exija no CI um teste de consumo do `.nupkg` recém-gerado.
+
+Os samples 01 a 07 já usam `ProjectReference` no checkout para permitir o desenvolvimento conjunto com o framework sem gerar pacotes antes da primeira execução. Para validar o consumo por NuGet nesses projetos, use `UseInstalledPackages=true` e informe `FrameworkPackageVersion` ao restaurar e compilar.
+
+### 5.3. Validação de Consumo no CI
+
+A esteira de samples ([#21]) executa [`samples/validate-ci.ps1`](../samples/validate-ci.ps1). O script empacota o framework com uma versão de pré-lançamento exclusiva, restaura os samples a partir do feed local com cache isolado, verifica a versão e a origem dos pacotes e executa o build e os smoke tests com `PackageReference`.
 
 ---
 
