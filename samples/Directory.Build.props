@@ -1,0 +1,16 @@
+<Project>
+  <!-- Padrão arquitetural e de isolamento de samples (Issue #18 / #23) -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseInstalledPackages Condition="'$(UseInstalledPackages)' == ''">false</UseInstalledPackages>
+    <FrameworkPackageVersion Condition="'$(FrameworkPackageVersion)' == ''">2.0.0</FrameworkPackageVersion>
+    <SampleReferenceMode Condition="'$(UseInstalledPackages)' == 'true'">packages</SampleReferenceMode>
+    <SampleReferenceMode Condition="'$(UseInstalledPackages)' != 'true'">projects</SampleReferenceMode>
+    <BaseIntermediateOutputPath>obj/$(SampleReferenceMode)/</BaseIntermediateOutputPath>
+    <BaseOutputPath>bin/$(SampleReferenceMode)/</BaseOutputPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj/**;bin/**</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>

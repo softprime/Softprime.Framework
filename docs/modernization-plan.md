@@ -15,7 +15,9 @@
 - [Política NuGet](#política-nuget)
 - [Padronização de metadados e versões (#9)](#padronização-de-metadados-e-versões-9)
 - [CI/CD planejado (#8)](#cicd-planejado-8)
+- [Plano de modernização ASP.NET Core / MVC (#4)](#plano-de-modernização-aspnet-core--mvc-4)
 - [Plano de migração (fases e gates)](#plano-de-migração-fases-e-gates)
+- [Auditoria de dependências e segurança (`Common.Security`) (#6)](#auditoria-de-dependências-e-segurança-commonsecurity-6)
 - [Backlog de issues](#backlog-de-issues)
 - [Riscos / pendências](#riscos--pendências)
 
@@ -50,7 +52,7 @@ Fatos confirmados por leitura direta do repositório (não inferidos):
 | Mailer.SendGrid | mail | `netstandard2.0;netstandard2.1;net48` | `SendGrid` 9.22.0; → Mailer | — |
 | Multitenancy | multitenant | `netstandard2.0;netstandard2.1;net48` | `Microsoft.AspNetCore` 2.2.0, `Microsoft.Extensions.Caching.Memory` 5.0.0, `System.ComponentModel.Annotations` 5.0.0 | — |
 
-**Consumidores externos:** desconhecidos neste repositório — ver inventário detalhado abaixo na issue [#10] (`a confirmar`).
+**Consumidores externos:** não serão inventariados. Preservar contratos e linhas legadas com validação por aplicações de referência.
 
 ### Observações factuais relevantes
 
@@ -90,7 +92,7 @@ A estratégia completa de testes de caracterização para fixar o comportamento 
 
 ### Síntese executiva da estratégia:
 
-- **Framework, asserções e convenção aprovados:** `xUnit` + `Fluent Assertions 7.x`, com testes no padrão Arrange, Act, Assert (AAA). `Moq 4.x` como padrão para mocks de dependências externas; fakes manuais quando mais simples. Usar objetos reais para regras puras e banco de integração para persistência, sem mocks de `DbSet`/`IQueryable`. Fixar versões exatas e verificar execução na implementação. SQL Server e Oracle foram informados como bancos usuais dos consumidores; confirmar combinações de ORM/provider/versões/runtime no inventário. SQLite é apenas complementar.
+- **Framework, asserções e convenção aprovados:** `xUnit` + `Fluent Assertions 7.x`, com testes no padrão Arrange, Act, Assert (AAA). `Moq 4.x` como padrão para mocks de dependências externas; fakes manuais quando mais simples. Usar objetos reais para regras puras e banco de integração para persistência, sem mocks de `DbSet`/`IQueryable`. Fixar versões exatas e verificar execução na implementação. SQL Server e Oracle foram informados como bancos usuais dos consumidores; definir e testar combinações de referência de ORM/provider/versões/runtime, sem levantamento externo. SQLite é apenas complementar.
 - **Estrutura 1:1 aprovada:**
   - Um projeto `tests/<NomeDaBiblioteca>.Tests/<NomeDaBiblioteca>.Tests.csproj` por biblioteca, criado junto dos primeiros testes relevantes, sem projetos vazios ou declaração automática de cobertura.
   - Domain, Common, DTOs e cada ORM têm projetos separados, com dependências e fixtures próprias. Contratos de persistência são exercitados nas implementações; `DAL.Tests` será criado quando houver comportamento concreto relevante.
@@ -288,36 +290,38 @@ A implementação futura será considerada validada quando os 14 projetos import
   - Análise de superfície de API pública em tempo de compilação via Roslyn `PublicApiAnalyzers` (erros `RS0016` e `RS0017`).
   - Validação binária de pacotes e multi-targeting com `EnablePackageValidation=true` contra a baseline `2.0.0` durante o empacotamento ([#17]).
 - **Validação de Samples e Smoke Tests ([#21]):**
-  - Compilação isolada de `samples/**` e execução de testes pontuais com banco SQLite temporário descartável (`sample_smoke.db`).
-  - Auditoria estrita impedindo vazamento de binários ou pacotes de samples para o diretório de distribuição (`artifacts/packages/`).
+  - Implementação do workflow dedicado `.github/workflows/samples-ci.yml` em `windows-latest`.
+  - Compilação isolada de `samples/Softprime.Framework.Samples.sln` e execução da bateria de smoke tests via `samples/run-smoke-tests.ps1` (samples 01 a 07).
+  - Auditoria estrita garantindo que `IsPackable=false` seja respeitado e nenhum pacote de sample seja produzido no pack.
 - **Política Inviolável de Não-Publicação (No-Push no CI):**
   - O pipeline de CI **nunca** executa `dotnet nuget push`. Os pacotes `.nupkg` e `.snupkg` são arquivados estritamente como artefatos temporários no GitHub Actions com retenção de 7 dias para download, inspeção e testes locais. Publicação em produção permanece restrita ao workflow manual de release com aprovação formal (*sign-off*) dos mantenedores ([#12]).
 - **Otimização e Concorrência:** Cache global de pacotes NuGet em `%userprofile%\.nuget\packages`, flags `--no-restore` e `--no-build` em estágios subsequentes e cancelamento automático de execuções redundantes em Pull Requests.
 
+
 ---
 
-## Auditoria de dependências e segurança (`Common.Security`) (#6)
+## Plano de modernização ASP.NET Core / MVC (#4)
 
-> **Planejamento oficial de dependências e segurança aprovado na issue [#6]** (Fase 2 — Modernizar seletivamente). Documento de especificação detalhada: 👉 **[Relatório de Auditoria de Dependências e Segurança (`docs/dependency-and-security-audit.md`)](dependency-and-security-audit.md)**.
+> **Planejamento oficial da camada web aprovado na issue [#4]** (Fase 2 — Modernizar seletivamente). Documento de especificação detalhada: 👉 **[Plano de Modernização ASP.NET Core e Multitenancy (`docs/aspnetcore-modernization-plan.md`)](aspnetcore-modernization-plan.md)**.
 
-### Síntese executiva da auditoria:
-- **Correção de Vulnerabilidades Ativas:**
-  - `Newtonsoft.Json 12.0.3` (`Softprime.Framework.Api.Client`): Vulnerabilidade de alta severidade (GHSA-5crp-9r3c-p9vr — DoS por StackOverflow). Correção aprovada: atualização para `Newtonsoft.Json 13.0.3` no target `netstandard2.0` (compatibilidade net48 a validar).
-  - `NHibernate 5.3.5` (`Softprime.Framework.NH`): Vulnerabilidade de alta severidade (GHSA-fg4q-ccq8-3r5q — SQL injection em mappings, HQL e utilitários). Correção aprovada: atualização para `NHibernate 5.7.1` e `FluentNHibernate 3.5.0` mantendo a linha legada 5.x congelada e segura.
-- **Desacoplamento e Estabilização do Mailer:**
-  - `RazorLight 2.0.0-rc.3` (`Softprime.Framework.Mailer`): Saída do pré-release antigo para a versão estável `RazorLight 2.3.1`.
-  - Desacoplamento arquitetural (achado do comparativo com Codout [#17]/[#22]): introdução da abstração `ITemplateRenderer` para separar o contrato de despacho de e-mails da compilação de templates Razor, viabilizando testes mais simples e novos renderizadores sem acoplamento forçado.
-- **Atualização Seletiva de Pacotes Adicionais:**
-  - `EntityFramework 6.4.4` (`Softprime.Framework.EF6`): Atualização para `EntityFramework 6.5.1` (candidata; depreciação e compatibilidade precisam ser verificadas).
-  - `AWSSDK.SimpleEmailV2 3.5.1.25`: Atualização para a linha estável madura `3.7.x` candidata, com suporte vigente a confirmar.
-  - `SendGrid 9.22.0`: Atualização menor/patch para `SendGrid 9.29.3`.
-- **Invariantes Invioláveis de Segurança e Retrocompatibilidade (`Common.Security`):**
-  - **Preservação de Leitura:** Nenhuma chave, IV ou rotina de descriptografia legada (`CryptoString.Decrypt`, `CryptoFile.DecryptFile`, `SimpleHash.VerifyHash`) será descontinuada ou alterada de forma incompatível. Dados já cifrados em bancos de clientes continuarão 100% legíveis.
-  - **Criptografia Moderna Paralela:** Especificação de `AesCryptoString` (AES-256 com IV dinâmico e chave externa) com detecção automática de formato por prefixo (`$aes$v1$`) no `Decrypt`.
-  - **Rehash Transparente de Senhas no Login:** Especificação de `IPasswordHasher` moderno (Argon2id/PBKDF2). Durante a autenticação, se a senha for válida pelo algoritmo legado do `SimpleHash`, o sistema aciona o rehash transparente em background, atualizando o hash no banco sem exigir ação do usuário final.
+### Síntese executiva do plano:
+- **Substituição do Ecossistema ASP.NET Core 2.2 pelo Shared Framework:**
+  - `Softprime.Framework.Api` e `Softprime.Framework.Multitenancy` eliminam todas as dependências diretas e transitivas de pacotes descontinuados (`Microsoft.AspNetCore.Mvc 2.2.0`, `Microsoft.AspNetCore 2.2.0`, `Microsoft.Extensions.Caching.Memory 5.0.0` e `System.ComponentModel.Annotations 5.0.0`).
+  - Adoção exclusiva de `<FrameworkReference Include="Microsoft.AspNetCore.App" />` nos alvos modernos **`net10.0;net8.0`**.
+- **Decisão Explícita sobre `net48` e Consumidores Legados:**
+  - O Shared Framework moderno não é referenciável nem suportado em `.NET Framework 4.8` ou `.NET Standard 2.0/2.1`.
+  - O suporte a `net48` e `netstandard2.x` é **descontinuado** em `Api` e `Multitenancy` na versão **`3.0.0`** (MAJOR SemVer).
+  - Consumidores corporativos legados em `net48` permanecem atendidos pela linha estável congelada **`2.0.0`** no feed corporativo.
+- **Preservação de Contrato em `IApi<TDto, TId>`:**
+  - Manutenção integral do retorno `Task<IActionResult>` em todos os métodos CRUD (`Get`, `Post`, `Put`, `Delete`), assegurando 100% de compatibilidade binária e de compilação para os controllers existentes.
+- **Endurecimento de Segurança em `ApiKeyAuthorizeFilter`:**
+  - Preservação da herança `ActionFilterAttribute` e do retorno HTTP `403 Forbidden` (`StatusCodeResult(StatusCodes.Status403Forbidden)`).
+  - Modernização planejada da leitura de cabeçalho (`TryGetValue`) e comparação de tempo constante (`CryptographicOperations.FixedTimeEquals`) contra ataques de temporização (*timing attacks*).
+- **Adequação do Pipeline Multitenancy e DI:**
+  - Garantia de interoperabilidade dos middlewares de resolução e branch de pipeline (`IApplicationBuilder.New()`) com o *Endpoint Routing* do ASP.NET Core 8/10.
+  - Preservação da extensão `services.AddMultitenancy<TResolver>()` com proposta não-breaking de sobrecarga tipada `AddMultitenancy<TTenant, TResolver>()`.
 - **Invariante da Fase 2 (Planejamento):**
-  - Nenhuma alteração de código C# ou de arquivos de projeto (`.csproj`) foi realizada nesta rodada; todo o escopo de execução permanece documentado e especificado para os PRs subsequentes da Fase 2.
-
+  - Nenhuma alteração de código C# ou em arquivos de projeto (`.csproj`) foi realizada nesta rodada; todo o escopo de execução permanece documentado e especificado para os PRs subsequentes da Fase 2.
 
 ---
 
@@ -335,9 +339,9 @@ A implementação futura será considerada validada quando os 14 projetos import
 - [#9] Centralização de metadados / avaliar CPM (P2) — *Concluído no planejamento*
 
 ### Fase 2 — Modernizar seletivamente (só após os gates)
-- [#4] ASP.NET Core / MVC 2.2 → moderno (P1)
+- [#4] ASP.NET Core / MVC 2.2 → moderno (P1) — *Concluído no planejamento*
 - [#5] Legado EF Core/EF6/NH + implementação EF Core 10 (P1)
-- [#6] Auditoria/atualização de dependências + segurança `Common.Security` (P1) — *Concluído no planejamento*
+- [#6] Auditoria/atualização de dependências + segurança `Common.Security` (P1)
 
 ### Fase 3 — Consolidar e homologar
 - [#13] Atualizar documentação/diretrizes para a arquitetura aprovada (P1)
@@ -361,6 +365,32 @@ A implementação futura será considerada validada quando os 14 projetos import
 
 ---
 
+## Auditoria de dependências e segurança (`Common.Security`) (#6)
+
+Auditoria documental concluída. Implementação e validação das atualizações pendentes.
+
+> **Planejamento oficial de dependências e segurança aprovado na issue [#6]** (Fase 2 — Modernizar seletivamente). Documento de especificação detalhada: 👉 **[Relatório de Auditoria de Dependências e Segurança (`docs/dependency-and-security-audit.md`)](dependency-and-security-audit.md)**.
+
+### Síntese executiva da auditoria:
+- **Atualizações candidatas para dependências com vulnerabilidades conhecidas:**
+  - `Newtonsoft.Json 12.0.3` (`Softprime.Framework.Api.Client`): Vulnerabilidade de alta severidade (GHSA-5crp-9r3c-p9vr — DoS por StackOverflow). Atualização candidata: atualização para `Newtonsoft.Json 13.0.3` no target `netstandard2.0` (compatibilidade net48 a validar).
+  - `NHibernate 5.3.5` (`Softprime.Framework.NH`): Vulnerabilidade de alta severidade (GHSA-fg4q-ccq8-3r5q — SQL injection em mappings, HQL e utilitários). Atualização candidata: atualização para `NHibernate 5.7.1` e `FluentNHibernate 3.5.0` na linha legada 5.x, com validação dos mapeamentos.
+- **Desacoplamento e Estabilização do Mailer:**
+  - `RazorLight 2.0.0-rc.3` (`Softprime.Framework.Mailer`): Saída do pré-release antigo para a versão estável `RazorLight 2.3.1`.
+  - Desacoplamento arquitetural (achado do comparativo com Codout [#17]/[#22]): introdução da abstração `ITemplateRenderer` para separar o contrato de despacho de e-mails da compilação de templates Razor, viabilizando testes mais simples e novos renderizadores sem acoplamento forçado.
+- **Atualização Seletiva de Pacotes Adicionais:**
+  - `EntityFramework 6.4.4` (`Softprime.Framework.EF6`): Atualização para `EntityFramework 6.5.1` (candidata; depreciação e compatibilidade precisam ser verificadas).
+  - `AWSSDK.SimpleEmailV2 3.5.1.25`: Atualização para a linha estável madura `3.7.x` candidata, com suporte vigente a confirmar.
+  - `SendGrid 9.22.0`: Atualização menor/patch para `SendGrid 9.29.3`.
+- **Invariantes Invioláveis de Segurança e Retrocompatibilidade (`Common.Security`):**
+  - **Preservação de Leitura:** Nenhuma chave, IV ou rotina de descriptografia legada (`CryptoString.Decrypt`, `CryptoFile.DecryptFile`, `SimpleHash.VerifyHash`) será descontinuada ou alterada de forma incompatível. A leitura dos dados já cifrados deve ser validada com testes de regressão.
+  - **Criptografia Moderna Paralela:** Especificação de `AesCryptoString` (AES-256 com IV dinâmico e chave externa) com detecção automática de formato por prefixo (`$aes$v1$`) no `Decrypt`.
+  - **Rehash Transparente de Senhas no Login:** Especificação de `IPasswordHasher` moderno (Argon2id/PBKDF2). Durante a autenticação, se a senha for válida pelo algoritmo legado do `SimpleHash`, o sistema aciona o rehash transparente em background, atualizando o hash no banco sem exigir ação do usuário final.
+- **Invariante da Fase 2 (Planejamento):**
+  - Nenhuma alteração de código C# ou de arquivos de projeto (`.csproj`) foi realizada nesta rodada; todo o escopo de execução permanece documentado e especificado para os PRs subsequentes da Fase 2.
+
+---
+
 ## Backlog de issues
 
 | # | Título | Prioridade | Fase | Bloqueada por | Status / Entregável |
@@ -372,10 +402,10 @@ A implementação futura será considerada validada quando os 14 projetos import
 | [#12] | [NuGet] Política de versionamento e publicação | P1 | 1 | relaciona #9, #8 | Entregue ([docs/nuget-versioning-policy.md](nuget-versioning-policy.md)) |
 | [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | relaciona #7, #3, #12 | Entregue ([docs/ci-pipeline-spec.md](ci-pipeline-spec.md)) |
 | [#9]  | Centralizar metadados / avaliar CPM | P2 | 1 | relaciona #12, #3 | Entregue (Seção "Padronização de metadados e versões") |
-| [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | relaciona #3, #10, #11, #12 | Bloqueada |
-| [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | relaciona #3, #10, #12 | Bloqueada |
-| [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | relaciona #3, #11, #12 | Entregue ([docs/dependency-and-security-audit.md](dependency-and-security-audit.md)) |
-| [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | relaciona #3, #12 | Bloqueada |
+| [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | relaciona #3, #10, #11, #12 | Entregue ([docs/aspnetcore-modernization-plan.md](aspnetcore-modernization-plan.md)) |
+| [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | relaciona #3, #10, #12 | Implementação pendente |
+| [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | relaciona #3, #11, #12 | Implementação pendente |
+| [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | relaciona #3, #12 | Entregue (`README.md`, `.kiro/steering/`, `CONTRIBUTING.md`) |
 
 ### Primeiro lote seguro de execução
 
@@ -385,11 +415,11 @@ Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento
 
 ## Riscos / pendências
 
-- **Consumidores externos e estado do feed NuGet (Pendente de validação):** O inventário factual do repositório foi concluído na issue [#10] em [docs/package-inventory.md](package-inventory.md). As lacunas de repositórios consumidores externos e a listagem de versões reais do feed NuGet corporativo foram formalizadas com status `a confirmar`.
+- **Consumidores externos:** não haverá levantamento externo. Validar compatibilidade por contratos públicos, matriz de targets e aplicações de referência. O inventário técnico permanece; versões publicadas no feed continuam desconhecidas.
 - **`Common.Security`:** Auditoria concluída na issue [#6] em [docs/dependency-and-security-audit.md](dependency-and-security-audit.md). Formalizado o requisito de retrocompatibilidade de leitura de dados preexistentes e especificado o rehash transparente no login.
-- **`net48` + ASP.NET Core moderno:** incompatível; exige decisão sobre manter linha legada vs. descontinuar (#4).
+- **`net48` + ASP.NET Core moderno:** mitigado e formalizado no planejamento da issue [#4] ([docs/aspnetcore-modernization-plan.md](aspnetcore-modernization-plan.md)): incompatibilidade resolvida com a descontinuação formal de `net48` nas versões `3.0.0` de `Api` e `Multitenancy`, mantendo os consumidores legados atendidos na linha congelada `2.0.0` do feed corporativo.
 - **Runners de CI:** mitigado e formalizado no planejamento da esteira de CI em [#8] ([docs/ci-pipeline-spec.md](ci-pipeline-spec.md)) com topologia unificada 100% Windows (`windows-latest`), garantindo paridade com a produção (IIS/Windows Server) e suporte direto a `net48` e aos runtimes modernos.
-- **Documentação:** `tech.md` originalmente sugeria `netstandard2.1`/`2.0.0` como padrão para novos projetos — já sinalizado e a corrigir formalmente em [#13].
+- **Documentação:** Resolvido na issue [#13]. As diretrizes em `.kiro/steering/` (`tech.md`, `product.md`, `structure.md`) e `README.md` foram devidamente harmonizadas, eliminando a instrução inadequada de `netstandard2.1`/`2.0.0` para novos projetos e separando o estado atual factual (2.0.0) da arquitetura alvo (SemVer 2.0.0, targets [#3], CI [#8] e governança [#17]/[#22] em `CONTRIBUTING.md`).
 
 ---
 

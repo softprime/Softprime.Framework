@@ -1,0 +1,67 @@
+name: Samples CI & Smoke Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'release/**'
+    paths:
+      - 'samples/**'
+      - 'src/**'
+      - '.github/workflows/samples-ci.yml'
+  push:
+    branches:
+      - main
+      - 'release/**'
+    paths:
+      - 'samples/**'
+      - 'src/**'
+      - '.github/workflows/samples-ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: samples-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  samples-smoke-test:
+    name: Build & Smoke Test Samples (#21)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            6.0.x
+            8.0.x
+            10.0.x
+
+      - name: NuGet Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: windows-samples-nuget-${{ hashFiles('samples/**/*.csproj', 'samples/Directory.Build.props', 'src/**/*.csproj') }}
+          restore-keys: |
+            windows-samples-nuget-
+
+      - name: Validate project and package consumption (26 smoke tests)
+        run: ./samples/validate-ci.ps1
+
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: samples-validation-${{ github.sha }}
+          path: |
+            artifacts/samples-ci/**/feed/*.nupkg
+            artifacts/samples-ci/**/nuget.config
+            artifacts/samples-ci/**/validation.log
+            samples/**/obj/packages/project.assets.json
+          retention-days: 7

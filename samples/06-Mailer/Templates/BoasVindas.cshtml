@@ -1,0 +1,9 @@
+@model Softprime.Samples.Mailer.BoasVindasEmailModel
+<!DOCTYPE html>
+<html lang="pt-BR">
+<body>
+  <h1>Bem-vindo(a), @Model.NomeUsuario!</h1>
+  <p>Sua conta na organizacao <strong>@Model.Empresa</strong> foi provisionada com sucesso.</p>
+  <p>Acesse o painel em: <a href="@Model.UrlAtivacao">@Model.UrlAtivacao</a></p>
+</body>
+</html>
