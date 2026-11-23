@@ -12,12 +12,12 @@ Cada diretório abaixo é um projeto autocontido focado em um componente ou cen�
 |---|---|---|---|
 | [`01-Common`](01-Common/) | `Softprime.Samples.Common` | Extensões, validação (CPF/CNPJ), helpers, criptografia | ✅ Implementado |
 | [`02-Domain`](02-Domain/) | `Softprime.Samples.Domain` | Entidades, Value Objects, DomainSignature, lifecycle | ✅ Implementado |
-| [`03-Data-EFCore`](03-Data-EFCore/) | `Softprime.Samples.DataEFCore` | Repositório genérico, Unit of Work, paginação (SQLite local via EFCore5/`net6.0` até #5) | ✅ Implementado |
+| [`03-Data-EFCore`](03-Data-EFCore/) | `Softprime.Samples.DataEFCore` | Repositório genérico, Unit of Work e paginação com SQLite na linha EFCore5/`net6.0` | ✅ Implementado |
 | [`04-WebApi`](04-WebApi/) | `Softprime.Samples.WebApi` | Endpoints REST, contratos CRUD (`IApi`), DTOs, validação e `ApiKeyAuthorizeFilter` | ✅ Implementado |
 | [`05-ApiClient`](05-ApiClient/) | `Softprime.Samples.ApiClient` | Cliente HTTP tipado, paginação, headers `ApiKey`/`TenantKey`, `ApiException` e timeout | ✅ Implementado |
 | [`06-Mailer`](06-Mailer/) | `Softprime.Samples.Mailer` | Templates Razor com despacho em memória (`FakeMailerDispatcher`) | ✅ Implementado |
 | [`07-Multitenancy`](07-Multitenancy/) | `Softprime.Samples.Multitenancy` | Resolução por cabeçalho/query/subdomínio, cache, isolamento e rejeição de tenant inválido | ✅ Implementado |
-| `08-CompleteSample` | `Softprime.Samples.CompleteSample` | Aplicação corporativa integrada ponta a ponta | ⏳ Planejado |
+| [`08-CompleteSample`](08-CompleteSample/) | `Softprime.Samples.CompleteSample` | Cadastros e isolamento de tenants com SQLite e EFCore10 | ✅ Implementado |
 | `99-Net48-Consumo` | `Softprime.Samples.Net48Consumo` | Validação de consumo em .NET Framework 4.8 | ⏳ Opcional |
 
 ---
@@ -40,14 +40,13 @@ Cada diretório abaixo é um projeto autocontido focado em um componente ou cen�
 powershell -ExecutionPolicy Bypass -File ./samples/validate-ci.ps1
 ```
 
-O script compila e executa 13 combinações de sample/runtime com referências a
-projetos e repete as 13 com pacotes NuGet locais: **26 execuções** no total.
-Os samples 01/02/04/05/06/07 rodam em `net10.0` e `net8.0`; o sample 03
-permanece provisoriamente em `net6.0`/EFCore5 até a modernização da persistência.
+O script executa 14 combinações de sample e runtime com referências a projetos
+e repete as 14 com pacotes NuGet locais. Os samples 01/02/04/05/06/07 rodam em
+`net10.0` e `net8.0`, o 03 em `net6.0` com EFCore5 e o 08 em `net10.0` com EFCore10.
 
-O modo padrão usa `ProjectReference` para desenvolvimento. Com
-`UseInstalledPackages=true`, os projetos usam `PackageReference` e a versão
-`FrameworkPackageVersion` (padrão `2.0.0`). O script gera uma versão exclusiva
+Os samples 01–07 usam `ProjectReference` por padrão. O sample 08 usa
+`PackageReference` com o feed gerado pelo script. Em modo pacote, o script usa
+`UseInstalledPackages=true` e fornece `FrameworkPackageVersion`. Ele gera uma versão exclusiva
 de validação dos pacotes de produção, restaura em cache vazio e confere nos
 assets e metadados que todos os pacotes Softprime vieram do feed local.
 Dependências externas são restauradas do NuGet.org; após restore, os exemplos
@@ -63,7 +62,7 @@ qualquer `.nupkg` ou `.snupkg` produzido causa falha, independentemente do nome.
 ### 1. Compilação da Solution de Samples
 
 ```powershell
-dotnet build samples/Softprime.Framework.Samples.sln -c Release
+dotnet build samples/Softprime.Framework.Samples.sln -c Release -p:UseInstalledPackages=false
 ```
 
 ---
