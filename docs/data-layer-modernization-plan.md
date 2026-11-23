@@ -1,7 +1,7 @@
 # Plano de Modernização da Camada de Dados — Softprime.Framework
 
-> Documento de referência técnica e arquitetural · **Entregável da Issue [#5]** (Fase 2 — Modernizar seletivamente).  
-> Baseado nos achados do [Inventário de Consumidores e Dependências (`docs/package-inventory.md`)](package-inventory.md) ([#10]), da [Estratégia de Baseline de APIs Públicas (`docs/api-baseline-strategy.md`)](api-baseline-strategy.md) ([#11]), da [Matriz de Compatibilidade e Estratégia de Targets (`docs/target-compatibility-matrix.md`)](target-compatibility-matrix.md) ([#3]), da [Política de Versionamento e Publicação NuGet (`docs/nuget-versioning-policy.md`)](nuget-versioning-policy.md) ([#12]), da [Estratégia de Testes (`docs/test-strategy.md`)](test-strategy.md) ([#7]), do [Planejamento de CI (`docs/ci-pipeline-spec.md`)](ci-pipeline-spec.md) ([#8]) e do [Plano de Modernização Web (`docs/aspnetcore-modernization-plan.md`)](aspnetcore-modernization-plan.md) ([#4]).  
+> Documento de referência técnica e arquitetural · **Entregável da Issue [#5]** (Fase 2 — Modernizar seletivamente).
+> Baseado nos achados do [Inventário de Consumidores e Dependências (`docs/package-inventory.md`)](package-inventory.md) ([#10]), da [Estratégia de Baseline de APIs Públicas (`docs/api-baseline-strategy.md`)](api-baseline-strategy.md) ([#11]), da [Matriz de Compatibilidade e Estratégia de Targets (`docs/target-compatibility-matrix.md`)](target-compatibility-matrix.md) ([#3]), da [Política de Versionamento e Publicação NuGet (`docs/nuget-versioning-policy.md`)](nuget-versioning-policy.md) ([#12]), da [Estratégia de Testes (`docs/test-strategy.md`)](test-strategy.md) ([#7]), do [Planejamento de CI (`docs/ci-pipeline-spec.md`)](ci-pipeline-spec.md) ([#8]) e do [Plano de Modernização Web (`docs/aspnetcore-modernization-plan.md`)](aspnetcore-modernization-plan.md) ([#4]).
 > Data: 2026-11-05 · Branch: `feat/issue-5-modernizacao-camada-dados`
 
 ---
@@ -59,15 +59,15 @@ flowchart TD
 
 ### Fatos Críticos Confirmados no Repositório
 
-1. **Independência Tecnológica entre EF6, NH e EF Core:**  
+1. **Independência Tecnológica entre EF6, NH e EF Core:**
    O repositório histórico continha menções vagas a "consolidar EFCore3 + EFCore5". A auditoria detalhada do código comprovou que `EF6` (baseado no `System.Data.Entity` do EF 6.4.4 clássico) e `NH` (baseado em `NHibernate.ISession` e `FluentNHibernate`) são **tecnologias totalmente distintas** de EF Core. Não compartilham pipelines, metadados ou abstrações de conexão. Consolidação automática ou eliminação dessas bibliotecas destruiria o ecossistema legado corporativo.
-2. **Fim de Vida Útil (EOL) das Dependências Microsoft EF Core Legadas:**  
+2. **Fim de Vida Útil (EOL) das Dependências Microsoft EF Core Legadas:**
    - `Microsoft.EntityFrameworkCore 3.1.11`: Fim de suporte pela Microsoft em **13 de dezembro de 2022**.
-   - `Microsoft.EntityFrameworkCore 5.0.2`: Fim de suporte pela Microsoft em **10 de maio de 2022**.  
+   - `Microsoft.EntityFrameworkCore 5.0.2`: Fim de suporte pela Microsoft em **10 de maio de 2022**.
    Ambas as versões não recebem patches de segurança, não têm funcionamento assegurado em runtimes modernos. Referenciabilidade por TFM não comprova funcionamento; validar cada combinação sem associar compatibilidade do ORM à versão de C#.
-3. **Incompatibilidade Específica de Plataforma em `EFCore5`:**  
+3. **Incompatibilidade Específica de Plataforma em `EFCore5`:**
    O arquivo `Softprime.Framework.EFCore5.csproj` possui `<TargetFramework>netstandard2.1</TargetFramework>`. Dado o fato inviolável de que **`.NET Standard 2.1 não roda em .NET Framework 4.8`**, consumidores em `net48` **nunca conseguiram utilizar `EFCore5`**.
-4. **Variações de Namespace:**  
+4. **Variações de Namespace:**
    - `Softprime.Framework.EFCore3`: utiliza `namespace Softprime.Framework.EF`.
    - `Softprime.Framework.EFCore5`: utiliza `namespace Softprime.Framework.EFCore5`.
    - `Softprime.Framework.EF6`: utiliza `namespace Softprime.Framework.EF6`.
@@ -86,7 +86,7 @@ As decisões usam contratos públicos, matriz aprovada e testes de referência. 
 ## 3. Decisão Arquitetural e Ciclo de Vida por Linha de Persistência
 
 > [!IMPORTANT]
-> **Diretriz de Preservação Inviolável:**  
+> **Diretriz de Preservação Inviolável:**
 > Nenhuma biblioteca legada de persistência será removida, renomeada ou descontinuada sem decisão explícita de compatibilidade e versionamento, documentação de migração e validação dos contratos suportados. Não será exigido levantamento externo.
 
 ### 3.1. `Softprime.Framework.EFCore3`
@@ -115,7 +115,7 @@ As decisões usam contratos públicos, matriz aprovada e testes de referência. 
 
 ### 3.5. `Softprime.Framework.EFCore10` (Novo Pacote Moderno)
 - **Decisão:** **Criar Nova Biblioteca Moderna na Fase 2**.
-- **Targets:** Multi-targeting **`net10.0;net8.0`** (alinhado a [#3]).
+- **Targets aprovados em [#3]:** o asset `net10.0` usa EF Core 10 e o asset `net8.0` usa EF Core 8. O [EF Core 10 exige .NET 10](https://learn.microsoft.com/ef/core/what-is-new/ef-core-10.0/whatsnew) e o [suporte do EF Core 8 terminou em 2026-11-10](https://learn.microsoft.com/ef/core/what-is-new/). Antes de publicar, submeter ao mantenedor a revisão do asset `net8.0` na matriz de targets e validar os provedores e patches da combinação aprovada.
 - **PackageId:** `Softprime.Framework.EFCore10` (com namespace `Softprime.Framework.EFCore`).
 - **Versão Inicial:** `3.0.0` (SemVer MAJOR), alinhada ao ciclo moderno de modernização da Softprime ([#12]).
 
@@ -244,7 +244,7 @@ graph LR
     <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    
+
     <!-- Metadados compartilhados herdados de src/Directory.Build.props (#9) -->
     <Description>Implementação moderna de persistência com Entity Framework Core (EF Core 10 LTS / EF Core 8 LTS) para Softprime.Framework.DAL</Description>
     <PackageTags>Softprime;Framework;EFCore;EntityFrameworkCore;ORM</PackageTags>
@@ -297,7 +297,7 @@ Método de extensão fluente para configuração em aplicações ASP.NET Core mo
 ```csharp
 public static IServiceCollection AddSoftprimeEFCore<TContext>(
     this IServiceCollection services,
-    Action<DbContextOptionsBuilder> optionsAction) 
+    Action<DbContextOptionsBuilder> optionsAction)
     where TContext : DbContext
 {
     services.AddDbContext<TContext>(optionsAction);
