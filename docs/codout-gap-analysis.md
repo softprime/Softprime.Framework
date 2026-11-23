@@ -52,7 +52,7 @@ Targets nesta tabela descrevem o Codout inspecionado. Se houver adoção futura,
 
 **Observação de leitura:** os dois resolvers têm nomes e fluxo semelhantes: leitura com identificador de contexto e gravação com identificador do tenant ([Codout][tenant], [Softprime][softprime-tenant]). Isso fundamenta comparação técnica; não prova direção de cópia, autorização ou ancestralidade.
 
-**Não comprovado:** a cronologia de entrada nesses repositórios não estabelece a origem do código, possíveis fontes comuns ou acordos entre mantenedores. Pergunta para confirmação: qual é a origem compartilhada, houve reaproveitamento entre os projetos e quais avisos devem acompanhar os arquivos? Até essa confirmação, não atribuir a autoria de um projeto ao outro nem afirmar equivalência dos pacotes.
+**Conclusão da pesquisa:** os registros públicos confirmam que o nome `Softprime.Multitenancy` aparece primeiro no histórico examinado do Codout e que a revisão examinada do Codout o usa para o build de compatibilidade. A origem do código, a direção de eventual reaproveitamento e a existência de uma fonte comum ou acordo entre mantenedores permanecem indeterminadas. Uma atribuição histórica requer registros adicionais.
 
 ## Licença e requisitos para eventual reaproveitamento
 
@@ -72,14 +72,14 @@ Os comentários abaixo já existem e foram conferidos nesta revisão. Não serã
 | Baseline pública/binária | [#11 — achado original](https://github.com/softprime/Softprime.Framework/issues/11#issuecomment-6619931579) |
 | Governança de novos componentes | [#13 — achado original](https://github.com/softprime/Softprime.Framework/issues/13#issuecomment-6619933319) |
 
-Complementos novos publicados: [ressalvas de Security/Mailer na #6](https://github.com/softprime/Softprime.Framework/issues/6#issuecomment-6956753486) e [observação de cache na #4](https://github.com/softprime/Softprime.Framework/issues/4#issuecomment-6956754015). Os achados não autorizam atualizações, correções ou mudanças comportamentais nessa pesquisa. Issues de planejamento encerradas não representam implementação concluída.
+As ressalvas de Security e Mailer ficam registradas na matriz acima. A observação sobre as chaves de cache é um cenário de caracterização para a implementação de Multitenancy planejada na [#4]. Os cinco comentários acima concentram os encaminhamentos verificáveis.
 
 ## Aprovação e pendências
 
 - Relatório revisado e matriz de recomendações entregues para aprovação do mantenedor; não marcar recomendações como decisões já aprovadas.
 - Demanda por novos componentes **não confirmada**. Nenhuma sub-issue de implementação criada. Para abrir uma: informar consumidor, problema concreto, limites, targets e critérios de teste/documentação/sample.
-- Proveniência histórica de Multitenancy permanece pendente de confirmação; fontes e limites da investigação estão registrados acima.
-- A #22 permanece aberta para aprovação e tratamento dessa pendência. O PR desta revisão não usa fechamento automático.
+- A conclusão sobre Multitenancy registra a cronologia confirmada e as perguntas históricas em aberto.
+- A #22 permanece aberta até a aprovação do relatório pelo mantenedor.
 - Não houve build, teste de execução, auditoria exaustiva de vulnerabilidades ou homologação de terceiros. Validação desta entrega: fontes, links, consistência das tabelas e diff documental.
 
 [codout]: https://github.com/Codout/Codout.Framework/tree/0e746b50697693228bbd36926be3cc8d2d1f457c
