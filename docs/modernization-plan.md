@@ -376,10 +376,11 @@ candidatos sem demanda confirmada; nenhum pacote ou sub-issue de implementação
 é criado por esta análise. O registro de defeitos do próprio Codout impede
 presumir que suas implementações estejam prontas para incorporação.
 
-A #22 permanece aberta: faltam aprovação das recomendações e confirmação da
-proveniência histórica de Multitenancy. Semelhança de código e cronologia dos
-commits não comprovam direção de reaproveitamento. Os comentários cruzados
-existentes foram vinculados no relatório; apenas achados novos terão complemento.
+A #22 permanece aberta para aprovação do relatório. A cronologia pública e o
+nome do build de compatibilidade de Multitenancy estão registrados. A origem
+do código e a direção de eventual reaproveitamento permanecem indeterminadas.
+O relatório vincula os comentários cruzados verificados e documenta os requisitos
+de atribuição MIT.
 
 ### Modernização dos pacotes
 
