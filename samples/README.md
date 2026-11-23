@@ -45,6 +45,12 @@ projetos e repete as 13 com pacotes NuGet locais: **26 execuções** no total.
 Os samples 01/02/04/05/06/07 rodam em `net10.0` e `net8.0`; o sample 03
 permanece provisoriamente em `net6.0`/EFCore5 até a modernização da persistência.
 
+A [execução de 18/11/2026 na `main`](https://github.com/softprime/Softprime.Framework/actions/runs/44386736747),
+no commit `fdafacf`, passou nos dois modos de referência e confirmou que os
+sete samples 01–07 ficaram fora do empacotamento. A execução cobre o sample 03
+com SQLite na configuração provisória. A migração para o EF Core moderno
+será verificada quando a nova implementação estiver disponível.
+
 O modo padrão usa `ProjectReference` para desenvolvimento. Com
 `UseInstalledPackages=true`, os projetos usam `PackageReference` e a versão
 `FrameworkPackageVersion` (padrão `2.0.0`). O script gera uma versão exclusiva
