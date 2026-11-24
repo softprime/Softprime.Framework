@@ -419,6 +419,24 @@ Auditoria documental concluída. Implementação e validação das atualizaçõe
 
 ## Backlog de issues
 
+### Frente A — avaliação de componentes (#22)
+
+A revisão de [docs/codout-gap-analysis.md](codout-gap-analysis.md), em 2026-11-17,
+compara revisões fixadas dos dois repositórios e apresenta recomendações para
+aprovação. Prioriza práticas de validação de pacotes/testes (#11/#8/#7) e a
+adaptação do desenho de Security/Mailer (#6). Os componentes novos permanecem
+candidatos sem demanda confirmada; nenhum pacote ou sub-issue de implementação
+é criado por esta análise. O registro de defeitos do próprio Codout impede
+presumir que suas implementações estejam prontas para incorporação.
+
+A #22 permanece aberta para aprovação do relatório. A cronologia pública e o
+nome do build de compatibilidade de Multitenancy estão registrados. A origem
+do código e a direção de eventual reaproveitamento permanecem indeterminadas.
+O relatório vincula os comentários cruzados verificados e documenta os requisitos
+de atribuição MIT.
+
+### Modernização dos pacotes
+
 | # | Título | Prioridade | Fase | Bloqueada por | Status / Entregável |
 |---|---|---|---|---|---|
 | [#10] | [Arquitetura] Inventariar consumidores e dependências | P0 | 0 | — | Entregue ([docs/package-inventory.md](package-inventory.md)) |
