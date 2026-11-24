@@ -181,6 +181,49 @@ namespace Softprime.Framework.Api.Client.Tests
         }
 
         [Fact]
+        public async Task Get_ApiKeyOnlyConstructor_SendsApiKeyAndOmitsTenantKey()
+        {
+            await using var endpoint = await Endpoint.StartAsync("[]");
+            var client = new ApiClient<ClientItem, int>("items", endpoint.BaseUrl, "synthetic-key");
+            using var transport = client.Client;
+
+            var items = await client.Get();
+            var request = await endpoint.Request;
+
+            items.Should().BeEmpty();
+            request.ApiKey.Should().Be("synthetic-key");
+            request.TenantKey.Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData("", StatusCodes.Status204NoContent)]
+        [InlineData("null", StatusCodes.Status200OK)]
+        public async Task Get_EmptyOrJsonNullResponse_ReturnsNull(string body, int statusCode)
+        {
+            await using var endpoint = await Endpoint.StartAsync(body, statusCode);
+            var client = new ApiClient<ClientItem, int>("items", endpoint.BaseUrl);
+            using var transport = client.Client;
+
+            var result = await client.Get(15);
+
+            result.Should().BeNull();
+            (await endpoint.Request).Target.Should().Be("/base/items/15");
+        }
+
+        [Fact]
+        public async Task Get_PagesOnUriWithExistingQuery_AppendsTheLegacyQueryString()
+        {
+            await using var endpoint = await Endpoint.StartAsync("""{"Results":[]}""");
+            var client = new ApiClient<ClientItem, int>("items?scope=all", endpoint.BaseUrl);
+            using var transport = client.Client;
+
+            var page = await client.Get(1, 2);
+
+            page.Results.Should().BeEmpty();
+            (await endpoint.Request).Target.Should().Be("/base/items?scope=all?page=1&size=2");
+        }
+
+        [Fact]
         public async Task Get_InvalidJsonOnSuccess_ExposesJsonReaderException()
         {
             await using var endpoint = await Endpoint.StartAsync("malformed");

@@ -44,6 +44,33 @@ namespace Softprime.Framework.Api.Tests
         }
 
         [Fact]
+        public void OnActionExecuting_KeyInQueryOrUnconfiguredHeader_DoesNotAuthorize()
+        {
+            var filter = new ApiKeyAuthorizeFilter("X-Test-Key", "fixture-key");
+            var context = CreateContext();
+            context.HttpContext.Request.QueryString = new QueryString("?X-Test-Key=fixture-key");
+            context.HttpContext.Request.Headers["ApiKey"] = "fixture-key";
+
+            filter.OnActionExecuting(context);
+
+            context.Result.Should().BeOfType<StatusCodeResult>().Which.StatusCode.Should().Be(403);
+        }
+
+        [Fact]
+        public void OnActionExecuting_ValidKey_PreservesResultSetByAnotherFilter()
+        {
+            var filter = new ApiKeyAuthorizeFilter("X-Test-Key", "fixture-key");
+            var context = CreateContext();
+            context.HttpContext.Request.Headers["X-Test-Key"] = "fixture-key";
+            var existing = new StatusCodeResult(409);
+            context.Result = existing;
+
+            filter.OnActionExecuting(context);
+
+            context.Result.Should().BeSameAs(existing);
+        }
+
+        [Fact]
         public void OnActionExecuting_DuplicateValues_SetsForbiddenResult()
         {
             var filter = new ApiKeyAuthorizeFilter("X-Test-Key", "fixture-key");

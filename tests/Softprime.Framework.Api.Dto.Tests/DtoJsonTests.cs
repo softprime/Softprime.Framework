@@ -44,6 +44,18 @@ namespace Softprime.Framework.Api.Dto.Tests
         public void Deserialize_PageResults_SeparatesNullFromEmptyArray() =>
             fixture.Verify(VerifyPageResults);
 
+        [Fact]
+        public void Deserialize_UnknownEnumValueAndOtherProperties_PreservesNumericValue() =>
+            fixture.Verify(VerifyUnknownEnum);
+
+        [Fact]
+        public void Serialize_EmptyPage_PreservesExplicitEmptyResultsAndZeroCounts() =>
+            fixture.Verify(VerifyEmptyPage);
+
+        [Fact]
+        public void SerializeAndDeserialize_LargeIdentifier_PreservesInt64() =>
+            fixture.Verify(VerifyLargeIdentifier);
+
         private static void VerifyPackagedVersion()
         {
             var version = LegacyJson.SerializerAssembly
@@ -115,6 +127,42 @@ namespace Softprime.Framework.Api.Dto.Tests
         {
             Unknown,
             Active = 2
+        }
+
+        private static void VerifyUnknownEnum()
+        {
+            var item = LegacyJson.Deserialize<ItemDto>("""{"id":7,"STATUS":99,"ignored":"synthetic"}""");
+
+            item.Id.Should().Be(7);
+            ((int)item.Status).Should().Be(99);
+            JObject.Parse(LegacyJson.Serialize(item))["Status"].Value<int>().Should().Be(99);
+        }
+
+        private static void VerifyEmptyPage()
+        {
+            var page = new PagedResultDto<ItemDto> { Results = Array.Empty<ItemDto>() };
+
+            var json = JObject.Parse(LegacyJson.Serialize(page));
+
+            json["Results"].Should().BeOfType<JArray>().Which.Should().BeEmpty();
+            json["PageIndex"].Value<int>().Should().Be(0);
+            json["TotalCount"].Value<int>().Should().Be(0);
+            json["HasPreviousPage"].Value<bool>().Should().BeFalse();
+            json["HasNextPage"].Value<bool>().Should().BeFalse();
+        }
+
+        private static void VerifyLargeIdentifier()
+        {
+            const long id = 9_007_199_254_740_993;
+            var json = LegacyJson.Serialize(new LongDto { Id = id });
+            var recovered = LegacyJson.Deserialize<LongDto>(json);
+
+            JObject.Parse(json)["Id"].Value<long>().Should().Be(id);
+            recovered.Id.Should().Be(id);
+        }
+
+        private sealed class LongDto : DtoBase<long>
+        {
         }
 
         private class ItemDto : DtoBase<int?>
