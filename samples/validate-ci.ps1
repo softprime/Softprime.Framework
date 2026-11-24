@@ -1,6 +1,9 @@
 <# Validacao completa, sem publicacao. Requer Windows e SDKs 6, 8 e 10. #>
 [CmdletBinding()]
-param()
+param(
+    [switch]$PackageOnly,
+    [string]$RunDirectory
+)
 $ErrorActionPreference = 'Stop'
 function Invoke-Dotnet {
     param([string[]]$Arguments)
@@ -8,21 +11,28 @@ function Invoke-Dotnet {
     if ($LASTEXITCODE -ne 0) { throw "dotnet falhou ($LASTEXITCODE): $($Arguments -join ' ')" }
 }
 $root = Split-Path $PSScriptRoot -Parent
-$run = Join-Path $root ('artifacts/samples-ci/' + [guid]::NewGuid().ToString('N'))
+$run = if ($RunDirectory) {
+    $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($RunDirectory)
+} else {
+    Join-Path $root ('artifacts/samples-ci/' + [guid]::NewGuid().ToString('N'))
+}
 $feed = Join-Path $run 'feed'
 $cache = Join-Path $run 'nuget-cache'
 $version = '2.0.0-ci.' + [guid]::NewGuid().ToString('N')
 $config = Join-Path $run 'nuget.config'
 $previousCache = $env:NUGET_PACKAGES
 New-Item -ItemType Directory -Path $feed, $cache -Force | Out-Null
+$version | Set-Content -LiteralPath (Join-Path $run 'package-version.txt')
 Start-Transcript -Path (Join-Path $run 'validation.log') | Out-Null
 Push-Location $root
 try {
     $solution = 'samples/Softprime.Framework.Samples.sln'
-    Invoke-Dotnet @('restore', $solution, '-p:UseInstalledPackages=false')
-    Invoke-Dotnet @('build', $solution, '-c', 'Release', '--no-restore', '-p:UseInstalledPackages=false')
-    & (Join-Path $PSScriptRoot 'run-smoke-tests.ps1')
-    if ($LASTEXITCODE -ne 0) { throw 'Smoke tests com ProjectReference falharam.' }
+    if (!$PackageOnly) {
+        Invoke-Dotnet @('restore', $solution, '-p:UseInstalledPackages=false')
+        Invoke-Dotnet @('build', $solution, '-c', 'Release', '--no-restore', '-p:UseInstalledPackages=false')
+        & (Join-Path $PSScriptRoot 'run-smoke-tests.ps1')
+        if ($LASTEXITCODE -ne 0) { throw 'Smoke tests com ProjectReference falharam.' }
+    }
 
     # Versao exclusiva e cache vazio impedem consumir pacote antigo.
     $production = 'src/Softprime.Framework.All.sln'
@@ -59,7 +69,7 @@ try {
     & (Join-Path $PSScriptRoot 'run-smoke-tests.ps1') -UseInstalledPackages
     if ($LASTEXITCODE -ne 0) { throw 'Smoke tests com PackageReference falharam.' }
     & (Join-Path $PSScriptRoot 'audit-packaging.ps1') -OutputDirectory (Join-Path $run 'audit') -MSBuildProperties $props
-    Write-Host "[CI_PASSED] Duas modalidades validadas. Evidencias: $run"
+    Write-Host "[CI_PASSED] Validacao concluida. Evidencias: $run"
 } finally {
     $env:NUGET_PACKAGES = $previousCache
     Pop-Location
