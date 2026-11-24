@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using FluentAssertions;
 using Softprime.Framework.Domain.DAL;
 using Xunit;
@@ -97,6 +98,74 @@ namespace Softprime.Framework.Domain.Tests
         }
 
         [Fact]
+        public void Equals_NullDomainSignature_StillComparesTheSignature()
+        {
+            var first = new SignedEntity();
+            var same = new SignedEntity();
+            var named = new SignedEntity { Code = "named" };
+
+            first.HasSameObjectSignatureAs(same).Should().BeTrue();
+            first.Equals(same).Should().BeTrue();
+            first.GetHashCode().Should().Be(same.GetHashCode());
+            first.Equals(named).Should().BeFalse();
+            named.Equals(first).Should().BeFalse();
+        }
+
+        [Fact]
+        public void GetHashCode_EntitiesEqualAfterIdAssignment_CanHaveDifferentCachedHashes()
+        {
+            var previouslyTransient = new NumberedEntity { Number = 1 };
+            var fresh = new NumberedEntity { Number = 1 };
+            var transientHash = previouslyTransient.GetHashCode();
+
+            previouslyTransient.SetId(2);
+            fresh.SetId(2);
+
+            previouslyTransient.Equals(fresh).Should().BeTrue();
+            previouslyTransient.GetHashCode().Should().Be(transientHash);
+            fresh.GetHashCode().Should().NotBe(transientHash);
+        }
+
+        [Fact]
+        public void Equals_EntityAdvertisingTheUnproxiedType_IsDirectional()
+        {
+            var entity = new SignedEntity { Code = "same" };
+            var proxy = new PretendProxy { Code = "same" };
+            entity.SetId(4);
+            proxy.SetId(4);
+
+            entity.Equals(proxy).Should().BeTrue();
+            proxy.Equals(entity).Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(null, 1, nameof(ValidatingEntity.Name))]
+        [InlineData("sample", 0, nameof(ValidatingEntity.Level))]
+        [InlineData("sample", 11, nameof(ValidatingEntity.Level))]
+        public void ValidationResults_InvalidAnnotatedProperty_IdentifiesTheMember(
+            string name, int level, string invalidMember)
+        {
+            var entity = new ValidatingEntity { Name = name, Level = level };
+
+            entity.IsValid().Should().BeFalse();
+            entity.ValidationResults().Should().ContainSingle()
+                .Which.MemberNames.Should().Equal(invalidMember);
+        }
+
+        [Fact]
+        public void IsValid_AfterUpdatingInvalidProperties_ReevaluatesAnnotations()
+        {
+            var entity = new ValidatingEntity();
+            entity.ValidationResults().Should().HaveCount(2);
+
+            entity.Name = "sample";
+            entity.Level = 1;
+
+            entity.IsValid().Should().BeTrue();
+            entity.ValidationResults().Should().BeEmpty();
+        }
+
+        [Fact]
         public void Hooks_ExplicitCalls_DispatchToOverrides()
         {
             var observed = new HookEntity();
@@ -133,6 +202,26 @@ namespace Softprime.Framework.Domain.Tests
 
         private sealed class DerivedEntity : SignedEntity
         {
+        }
+
+        private sealed class NumberedEntity : TestEntity<int>
+        {
+            [DomainSignature]
+            public int Number { get; set; }
+        }
+
+        private sealed class PretendProxy : SignedEntity
+        {
+            protected override Type GetTypeUnproxied() => typeof(SignedEntity);
+        }
+
+        private sealed class ValidatingEntity : TestEntity<int>
+        {
+            [Required]
+            public string Name { get; set; }
+
+            [Range(1, 10)]
+            public int Level { get; set; }
         }
 
         private sealed class HookEntity : Entity

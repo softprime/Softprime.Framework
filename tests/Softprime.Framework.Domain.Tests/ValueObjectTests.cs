@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using FluentAssertions;
 using Xunit;
 
@@ -28,6 +29,33 @@ namespace Softprime.Framework.Domain.Tests
         }
 
         [Fact]
+        public void Equals_ObjectsWithoutPublicProperties_UsesReferenceIdentity()
+        {
+            var first = new EmptyValue();
+            var second = new EmptyValue();
+
+            first.Equals(first).Should().BeTrue();
+            first.Equals(second).Should().BeFalse();
+        }
+
+        [Fact]
+        public void Distinct_WithDomainComparer_UsesValueEqualityAndHashCode()
+        {
+            var first = new Measurement { Length = 1, Unit = "m" };
+            var copy = new Measurement { Length = 1, Unit = "m" };
+            var different = new Measurement { Length = 1, Unit = "cm" };
+            var comparer = new BaseObjectEqualityComparer<Measurement>();
+
+            var distinct = new[] { first, copy, different }.Distinct(comparer).ToArray();
+
+            distinct.Should().HaveCount(2);
+            distinct[0].Should().BeSameAs(first);
+            distinct[1].Should().BeSameAs(different);
+            comparer.Equals(null, null).Should().BeTrue();
+            comparer.Equals(first, null).Should().BeFalse();
+        }
+
+        [Fact]
         public void GetSignatureProperties_AnnotatedProperty_Throws()
         {
             var value = new InvalidMeasurement();
@@ -44,6 +72,10 @@ namespace Softprime.Framework.Domain.Tests
         }
 
         private sealed class DerivedMeasurement : Measurement
+        {
+        }
+
+        private sealed class EmptyValue : ValueObject
         {
         }
 
