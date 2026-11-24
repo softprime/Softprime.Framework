@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <Authors>Marcelo Paiva</Authors>
+    <Company>Softprime</Company>
+    <Description>Implementação moderna dos contratos de persistência do Softprime.Framework.DAL para Entity Framework Core</Description>
+    <Copyright>Softprime</Copyright>
+    <PackageProjectUrl>https://github.com/softprime/Softprime.Framework</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/softprime/Softprime.Framework</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Softprime;Framework;EFCore;ORM</PackageTags>
+    <PackageIcon>logo-nuget.png</PackageIcon>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>3.0.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <EFCoreVersion>10.0.15</EFCoreVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <EFCoreVersion>8.0.34</EFCoreVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
+    <None Include="logo-nuget.png" Pack="true" PackagePath="" />
+    <ProjectReference Include="..\Softprime.Framework.DAL\Softprime.Framework.DAL.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EFCoreVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="$(EFCoreVersion)" />
+  </ItemGroup>
+
+</Project>
