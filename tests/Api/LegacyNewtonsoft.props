@@ -1,0 +1,20 @@
+<Project>
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
+        <LegacyNewtonsoftTarget>net45</LegacyNewtonsoftTarget>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        <LegacyNewtonsoftTarget>netstandard2.0</LegacyNewtonsoftTarget>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(LegacyNewtonsoftTarget)' != ''">
+        <!-- Keep Newtonsoft 12.0.3 separate from the version used by VSTest. -->
+        <PackageDownload Include="Newtonsoft.Json" Version="[12.0.3]" />
+        <None Include="$(NuGetPackageRoot)newtonsoft.json/12.0.3/lib/$(LegacyNewtonsoftTarget)/Newtonsoft.Json.dll"
+              Link="legacy/Newtonsoft.Json.dll" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        <Compile Include="$(MSBuildThisFileDirectory)LegacyNewtonsoftLoadContext.cs"
+                 Link="LegacyNewtonsoftLoadContext.cs" />
+    </ItemGroup>
+</Project>
