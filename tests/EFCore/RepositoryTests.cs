@@ -177,6 +177,85 @@ namespace Softprime.Framework.Data.Tests
 #endif
 
         [Fact]
+        public async Task GetAndLoad_NullKey_ReturnNullWithoutTranslatingQuery()
+        {
+            var repository = unit.Repository<Item>();
+            object key = null;
+
+            repository.Get(key).Should().BeNull();
+            repository.Load(key).Should().BeNull();
+            (await repository.GetAsync(key)).Should().BeNull();
+            (await repository.LoadAsync(key)).Should().BeNull();
+        }
+
+        [Fact]
+        public async Task Save_NullEntity_RejectsItWithoutAddingATrackedEntry()
+        {
+            var repository = unit.Repository<Item>();
+
+            Action save = () => repository.Save(null);
+            Func<Task> saveAsync = () => repository.SaveAsync(null);
+
+            save.Should().ThrowExactly<ArgumentNullException>().WithParameterName("entity");
+            (await saveAsync.Should().ThrowExactlyAsync<ArgumentNullException>()).WithParameterName("entity");
+            context.ChangeTracker.Entries().Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Save_DuplicateIdentity_RejectsSecondInstanceInSameContext()
+        {
+            var repository = unit.Repository<Item>();
+            var first = new Item { Name = "first" };
+            var duplicate = new Item { Name = "second" };
+            first.SetId(9);
+            duplicate.SetId(9);
+            repository.Save(first);
+
+            Action save = () => repository.Save(duplicate);
+
+            save.Should().ThrowExactly<InvalidOperationException>();
+            repository.Get(9).Should().BeSameAs(first);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task Delete_BeforeInitialSave_DetachesEntityWithoutInsertingIt(bool asynchronous)
+        {
+            var repository = unit.Repository<Item>();
+            var item = new Item { Name = "discard" };
+            repository.Save(item);
+
+            if (asynchronous)
+                await repository.DeleteAsync(item);
+            else
+                repository.Delete(item);
+            unit.SaveChanges();
+
+            context.Entry(item).State.Should().Be(EntityState.Detached);
+            using var count = connection.CreateCommand();
+            count.CommandText = "SELECT COUNT(*) FROM Items";
+            Convert.ToInt32(count.ExecuteScalar()).Should().Be(0);
+        }
+
+        [Fact]
+        public void Repository_SeparateUnits_TrackTheirOwnInstances()
+        {
+            var item = new Item { Name = "one" };
+            item.SetId(15);
+            unit.Repository<Item>().Save(item);
+            using var otherContext = new TestContext(options);
+            using var otherUnit = new TestUnitOfWork(otherContext);
+            var otherItem = new Item { Name = "two" };
+            otherItem.SetId(item.Id);
+
+            otherUnit.Repository<Item>().Save(otherItem);
+
+            unit.Repository<Item>().Get(item.Id).Should().BeSameAs(item);
+            otherUnit.Repository<Item>().Get(item.Id).Should().BeSameAs(otherItem);
+        }
+
+        [Fact]
         public void Find_NullFilter_ThrowsArgumentNullException()
         {
             var repository = unit.Repository<Item>();
