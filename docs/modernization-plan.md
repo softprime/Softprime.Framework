@@ -432,6 +432,11 @@ Auditoria documental concluída. Implementação e validação das atualizaçõe
 | [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | relaciona #3, #10, #12 | Implementação pendente |
 | [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | relaciona #3, #11, #12 | Implementação pendente |
 | [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | relaciona #3, #12 | Entregue (`README.md`, `.kiro/steering/`, `CONTRIBUTING.md`) |
+| [#23] | [Frente B] Samples e experiência do desenvolvedor (DX) | P1 | DX | relaciona #18, #19, #20, #21 | Em andamento ([docs/samples-design.md](samples-design.md)) |
+| [#18] | [DX] Definir padrão de samples e documentação | P1 | DX | — | Entregue ([docs/samples-design.md](samples-design.md)) |
+| [#19] | [Samples] Exemplos isolados por componente (01–07) | P2 | DX | #18, #3 | Entregue ([samples/README.md](../samples/README.md)) |
+| [#20] | [Samples] Aplicação demonstrativa integrada (08) | P2 | DX | #19, #4, #5, #6 | Pendente |
+| [#21] | [CI] Compilar e executar smoke tests dos samples | P2 | DX | #18, #8 | Entregue ([samples-ci.yml](../.github/workflows/samples-ci.yml)) |
 
 ### Primeiro lote seguro de execução
 
@@ -464,3 +469,7 @@ Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento
 [#13]: https://github.com/softprime/Softprime.Framework/issues/13
 [#17]: https://github.com/softprime/Softprime.Framework/issues/17
 [#21]: https://github.com/softprime/Softprime.Framework/issues/21
+[#18]: https://github.com/softprime/Softprime.Framework/issues/18
+[#19]: https://github.com/softprime/Softprime.Framework/issues/19
+[#20]: https://github.com/softprime/Softprime.Framework/issues/20
+[#23]: https://github.com/softprime/Softprime.Framework/issues/23
