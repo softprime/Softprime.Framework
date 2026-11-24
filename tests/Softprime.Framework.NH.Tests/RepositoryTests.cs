@@ -47,6 +47,67 @@ namespace Softprime.Framework.NH.Tests
         }
 
         [Fact]
+        public async Task LoadAsync_AlreadyLoadedKey_ReusesTheUninitializedProxy()
+        {
+            using (var factory = TestMappings.BuildFactory("dbo", "SoftprimeItems"))
+            using (var session = factory.OpenSession())
+            using (var repository = new NHRepository<TestItem>(session))
+            {
+                var proxy = repository.Load(42);
+
+                var same = await repository.LoadAsync(42);
+
+                same.Should().BeSameAs(proxy);
+                NHibernateUtil.IsInitialized(same).Should().BeFalse();
+            }
+        }
+
+        [Fact]
+        public void Load_ProxyAccessAfterRepositoryDispose_CannotInitializeTheEntity()
+        {
+            using (var factory = TestMappings.BuildFactory("dbo", "SoftprimeItems"))
+            using (var session = factory.OpenSession())
+            {
+                var repository = new NHRepository<TestItem>(session);
+                var proxy = repository.Load(42);
+                repository.Dispose();
+
+                Action access = () => { var label = proxy.Label; };
+
+                access.Should().ThrowExactly<LazyInitializationException>();
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task Update_SameIdentityAsAttachedEntity_RejectsAnotherInstance(bool asynchronous)
+        {
+            using (var factory = TestMappings.BuildFactory("dbo", "SoftprimeItems"))
+            using (var session = factory.OpenSession())
+            using (var repository = new NHRepository<TestItem>(session))
+            {
+                var tracked = new TestItem(4, "first");
+                var duplicate = new TestItem(4, "second");
+                repository.Save(tracked);
+
+                if (asynchronous)
+                {
+                    Func<Task> update = () => repository.UpdateAsync(duplicate);
+                    await update.Should().ThrowExactlyAsync<NonUniqueObjectException>();
+                }
+                else
+                {
+                    Action update = () => repository.Update(duplicate);
+                    update.Should().ThrowExactly<NonUniqueObjectException>();
+                }
+
+                session.Contains(tracked).Should().BeTrue();
+                session.Contains(duplicate).Should().BeFalse();
+            }
+        }
+
+        [Fact]
         public void Dispose_Repository_ClosesItsSession()
         {
             using (var factory = TestMappings.BuildFactory("dbo", "SoftprimeItems"))
