@@ -39,4 +39,8 @@
     <ProjectReference Include="..\Softprime.Framework.DAL\Softprime.Framework.DAL.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Softprime.Framework.Domain.Tests" />
+  </ItemGroup>
+
 </Project>
