@@ -60,6 +60,50 @@ namespace Softprime.Framework.Mailer.AWS.Tests
         }
 
         [Fact]
+        public async Task Send_NoPlainText_MapsHtmlAndAnEmptyTextDataField()
+        {
+            var client = new Mock<IAmazonSimpleEmailServiceV2>(MockBehavior.Strict);
+            SendEmailRequest request = null;
+            client.Setup(value => value.SendEmailAsync(It.IsAny<SendEmailRequest>(), CancellationToken.None))
+                .Callback<SendEmailRequest, CancellationToken>((value, _) => request = value)
+                .ReturnsAsync(new SendEmailResponse { HttpStatusCode = HttpStatusCode.Accepted });
+            var dispatcher = new AWSDispatcher(CreateSettings(), _ => client.Object);
+
+            var response = await dispatcher.Send(new MailAddress("sender@example.test"),
+                new MailAddress("recipient@example.test"), "Synthetic mail", "<b>HTML</b>");
+
+            response.Sent.Should().BeTrue();
+            request.Content.Simple.Body.Html.Data.Should().Be("<b>HTML</b>");
+            request.Content.Simple.Body.Text.Data.Should().BeNull();
+            request.Content.Simple.Body.Text.Charset.Should().Be("UTF-8");
+        }
+
+        [Fact]
+        public async Task Send_AfterFactoryFailure_UsesFactoryAgainAndReturnsSuccessfulResponse()
+        {
+            var client = new Mock<IAmazonSimpleEmailServiceV2>(MockBehavior.Strict);
+            client.Setup(value => value.SendEmailAsync(It.IsAny<SendEmailRequest>(), CancellationToken.None))
+                .ReturnsAsync(new SendEmailResponse { HttpStatusCode = HttpStatusCode.Accepted });
+            var calls = 0;
+            var dispatcher = new AWSDispatcher(CreateSettings(), _ => ++calls == 1
+                ? throw new InvalidOperationException("synthetic factory failure")
+                : client.Object);
+            var from = new MailAddress("sender@example.test");
+            var to = new MailAddress("recipient@example.test");
+
+            var first = await dispatcher.Send(from, to, "First message", "<p>first</p>");
+            var second = await dispatcher.Send(from, to, "Second message", "<p>second</p>");
+
+            first.Sent.Should().BeFalse();
+            first.ErrorMessages.Should().Equal("synthetic factory failure");
+            second.Sent.Should().BeTrue();
+            second.ErrorMessages.Should().BeNull();
+            calls.Should().Be(2);
+            client.Verify(value => value.SendEmailAsync(It.Is<SendEmailRequest>(
+                request => request.Content.Simple.Subject.Data == "Second message"), CancellationToken.None), Times.Once);
+        }
+
+        [Fact]
         public async Task Send_ClientThrows_ReturnsProviderError()
         {
             var client = new Mock<IAmazonSimpleEmailServiceV2>(MockBehavior.Strict);

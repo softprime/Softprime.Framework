@@ -60,6 +60,60 @@ namespace Softprime.Framework.Mailer.Tests
         }
 
         [Fact]
+        public async Task Send_CompiledTemplateUsedTwice_RendersEachModelAndRecipient()
+        {
+            var dispatcher = new RecordingDispatcher(new MailerResponse { Sent = true });
+            var mailer = new TestMailer(dispatcher);
+            await mailer.Send("Receipt", CreateModel(), "First receipt");
+            var firstHtml = dispatcher.Html;
+            var second = new ReceiptModel
+            {
+                To = new MailAddress("second@example.test"),
+                Customer = "Bea",
+                Items = new[] { "Calendar" }
+            };
+
+            await mailer.Send("Receipt", second, "Second receipt");
+
+            dispatcher.Calls.Should().Be(2);
+            firstHtml.Should().Contain("Ada &amp; Lin");
+            dispatcher.Html.Should().Contain("Receipt for Bea").And.Contain("<li>Calendar</li>")
+                .And.NotContain("Ada").And.NotContain("Notebook");
+            dispatcher.To.Should().BeSameAs(second.To);
+            dispatcher.Subject.Should().Be("Second receipt");
+        }
+
+        [Fact]
+        public async Task Send_EmptyItemsAndAttachments_RendersTemplateAndForwardsEmptyArray()
+        {
+            var dispatcher = new RecordingDispatcher(new MailerResponse { Sent = true });
+            var mailer = new TestMailer(dispatcher);
+            var model = CreateModel();
+            model.Items = Array.Empty<string>();
+            var attachments = Array.Empty<Attachment>();
+
+            var response = await mailer.Send("Receipt", model, "Empty receipt", "", attachments);
+
+            response.Sent.Should().BeTrue();
+            dispatcher.Html.Should().Contain("Receipt for Ada &amp; Lin").And.NotContain("<li>");
+            dispatcher.PlainText.Should().BeEmpty();
+            dispatcher.Attachments.Should().BeSameAs(attachments);
+        }
+
+        [Fact]
+        public async Task Send_DispatcherThrows_PropagatesTheSameException()
+        {
+            var failure = new InvalidOperationException("synthetic dispatch failure");
+            var dispatcher = new RecordingDispatcher(new MailerResponse()) { Failure = failure };
+            var mailer = new TestMailer(dispatcher);
+
+            Func<Task> send = () => mailer.Send("Receipt", CreateModel(), "Synthetic receipt");
+
+            (await send.Should().ThrowExactlyAsync<InvalidOperationException>()).Which.Should().BeSameAs(failure);
+            dispatcher.Calls.Should().Be(1);
+        }
+
+        [Fact]
         public async Task Send_MissingTemplate_ThrowsBeforeDispatch()
         {
             var dispatcher = new RecordingDispatcher(new MailerResponse());
@@ -109,6 +163,7 @@ namespace Softprime.Framework.Mailer.Tests
             public string Html { get; private set; }
             public string PlainText { get; private set; }
             public Attachment[] Attachments { get; private set; }
+            public Exception Failure { get; set; }
 
             public Task<MailerResponse> Send(MailAddress from, MailAddress to, string subject,
                 string htmlContent, string plainTextContent, Attachment[] attachments)
@@ -120,7 +175,7 @@ namespace Softprime.Framework.Mailer.Tests
                 Html = htmlContent;
                 PlainText = plainTextContent;
                 Attachments = attachments;
-                return Task.FromResult(_response);
+                return Failure == null ? Task.FromResult(_response) : Task.FromException<MailerResponse>(Failure);
             }
         }
     }

@@ -74,6 +74,60 @@ namespace Softprime.Framework.Mailer.SendGrid.Tests
         }
 
         [Fact]
+        public async Task Send_MultipleAttachments_PreservesNamesOrderAndEachPayload()
+        {
+            var client = new Mock<ISendGridClient>(MockBehavior.Strict);
+            SendGridMessage message = null;
+            client.Setup(value => value.SendEmailAsync(It.IsAny<SendGridMessage>(), CancellationToken.None))
+                .Callback<SendGridMessage, CancellationToken>((value, _) => message = value)
+                .ReturnsAsync(new Response(HttpStatusCode.Accepted, null, null));
+            var dispatcher = new SendGridDispatcher(CreateSettings(), _ => client.Object);
+            using var first = new MailAttachment(new MemoryStream(new byte[] { 1, 2 }), "first.txt", "text/plain");
+            using var second = new MailAttachment(new MemoryStream(new byte[] { 3, 4 }), "second.bin", "application/octet-stream");
+
+            var response = await dispatcher.Send(new MailAddress("sender@example.test"),
+                new MailAddress("recipient@example.test"), "Synthetic mail", "<p>sample</p>",
+                attachments: new[] { first, second });
+
+            response.Sent.Should().BeTrue();
+            message.Attachments.Should().SatisfyRespectively(
+                attachment =>
+                {
+                    attachment.Filename.Should().Be("first.txt");
+                    attachment.Content.Should().Be("AQI=");
+                },
+                attachment =>
+                {
+                    attachment.Filename.Should().Be("second.bin");
+                    attachment.Content.Should().Be("AwQ=");
+                });
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task Send_WithoutAttachmentsOrPlainText_CreatesOnlyHtmlContent(bool emptyAttachments)
+        {
+            var client = new Mock<ISendGridClient>(MockBehavior.Strict);
+            SendGridMessage message = null;
+            client.Setup(value => value.SendEmailAsync(It.IsAny<SendGridMessage>(), CancellationToken.None))
+                .Callback<SendGridMessage, CancellationToken>((value, _) => message = value)
+                .ReturnsAsync(new Response(HttpStatusCode.Accepted, null, null));
+            var dispatcher = new SendGridDispatcher(CreateSettings(), _ => client.Object);
+            var attachments = emptyAttachments ? Array.Empty<MailAttachment>() : null;
+
+            var response = await dispatcher.Send(new MailAddress("sender@example.test"),
+                new MailAddress("recipient@example.test"), "Synthetic mail", "<p>sample</p>",
+                attachments: attachments);
+
+            response.Sent.Should().BeTrue();
+            message.Attachments.Should().BeNullOrEmpty();
+            var content = message.Contents.Should().ContainSingle().Which;
+            content.Type.Should().Be("text/html");
+            content.Value.Should().Be("<p>sample</p>");
+        }
+
+        [Fact]
         public async Task Send_ClientThrows_ReturnsProviderError()
         {
             var client = new Mock<ISendGridClient>(MockBehavior.Strict);
