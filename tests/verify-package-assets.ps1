@@ -20,7 +20,8 @@ try {
     if ($LASTEXITCODE) { throw 'Falha no restore do consumidor NuGet.' }
 
     $assets = Get-Content -Raw -LiteralPath (Join-Path $projectDirectory 'obj/project.assets.json') | ConvertFrom-Json
-    $packages = @('Common', 'Api.Dto', 'Domain', 'DAL')
+    $packages = @('Common', 'Api.Dto', 'Domain', 'DAL', 'Mailer', 'Mailer.AWS', 'Mailer.SendGrid')
+    $net48Assets = @('Domain', 'DAL', 'Mailer', 'Mailer.AWS', 'Mailer.SendGrid')
     foreach ($framework in 'net48', 'net8.0', 'net10.0') {
         $target = $assets.targets.PSObject.Properties[$framework].Value
         if (!$target) { throw "Target ausente dos assets: $framework." }
@@ -38,7 +39,7 @@ try {
             }
             $assetFramework = 'netstandard2.1'
             if ($framework -eq 'net48') {
-                $assetFramework = if ($package -in 'Domain', 'DAL') { 'net48' } else { 'netstandard2.0' }
+                $assetFramework = if ($package -in $net48Assets) { 'net48' } else { 'netstandard2.0' }
             }
             $expected = "lib/$assetFramework/$name.dll"
             foreach ($kind in 'compile', 'runtime') {

@@ -7,6 +7,9 @@ using Softprime.Framework.Api.Dto.Default;
 using Softprime.Framework.Common.Extensions;
 using Softprime.Framework.DAL.Entity;
 using Softprime.Framework.Domain.DAL;
+using Softprime.Framework.Mailer;
+using Softprime.Framework.Mailer.AWS;
+using Softprime.Framework.Mailer.SendGrid;
 #if !NET48
 using System.Runtime.Loader;
 #endif
@@ -29,6 +32,8 @@ namespace Softprime.Framework.PackageSmoke
             CheckAsset(typeof(PagedResultDto<>).Assembly, sharedFramework);
             CheckAsset(typeof(Entity).Assembly, domainFramework);
             CheckAsset(typeof(IEntity).Assembly, domainFramework);
+            CheckMailerAssets(typeof(ISoftprimeMailerDispatcher).Assembly, typeof(AWSDispatcher).Assembly,
+                typeof(SendGridDispatcher).Assembly, domainFramework);
 
             var entity = new SmokeEntity();
             if (!entity.IsTransient())
@@ -49,6 +54,11 @@ namespace Softprime.Framework.PackageSmoke
                 var dal = legacy.LoadFromAssemblyName(typeof(IEntity).Assembly.GetName());
                 foreach (var assembly in new[] { common, dtoAssembly, domain, dal })
                     CheckAsset(assembly, ".NETStandard,Version=v2.0");
+                CheckMailerAssets(
+                    legacy.LoadFromAssemblyName(typeof(ISoftprimeMailerDispatcher).Assembly.GetName()),
+                    legacy.LoadFromAssemblyName(typeof(AWSDispatcher).Assembly.GetName()),
+                    legacy.LoadFromAssemblyName(typeof(SendGridDispatcher).Assembly.GetName()),
+                    ".NETStandard,Version=v2.0");
 
                 var onlyNumbers = common.GetType(typeof(Strings).FullName, true).GetMethod(nameof(Strings.OnlyNumbers));
                 var digits = (string)onlyNumbers.Invoke(null, new object[] { "item-7" });
@@ -75,6 +85,28 @@ namespace Softprime.Framework.PackageSmoke
             if (target != expected)
                 throw new InvalidOperationException($"{name}: esperado {expected}, carregado {target}.");
             Console.WriteLine($"[LOADED_ASSET] {name}: {target} ({assembly.Location})");
+        }
+
+        private static void CheckMailerAssets(Assembly mailer, Assembly aws, Assembly sendGrid, string target)
+        {
+            CheckAsset(mailer, target);
+            CheckAsset(aws, target);
+            CheckAsset(sendGrid, target);
+
+            var contract = mailer.GetType(typeof(ISoftprimeMailerDispatcher).FullName, true);
+            CheckDispatcher(aws, typeof(AWSDispatcher).FullName, typeof(AWSSettings).FullName, contract);
+            CheckDispatcher(sendGrid, typeof(SendGridDispatcher).FullName, typeof(SendGridSettings).FullName, contract);
+        }
+
+        private static void CheckDispatcher(Assembly assembly, string dispatcherName, string settingsName, Type contract)
+        {
+            var dispatcherType = assembly.GetType(dispatcherName, true);
+            var settings = Activator.CreateInstance(assembly.GetType(settingsName, true));
+            var dispatcher = Activator.CreateInstance(dispatcherType, settings);
+
+            if (!contract.IsInstanceOfType(dispatcher))
+                throw new InvalidOperationException($"{dispatcherName} deveria implementar {contract.FullName}.");
+            Console.WriteLine($"[PACKAGE_CHECK_PASSED] {dispatcherName}");
         }
 
         private sealed class SmokeEntity : Entity
