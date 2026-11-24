@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -42,6 +43,57 @@ namespace Softprime.Framework.Multitenancy.Tests
         }
 
         [Fact]
+        public async Task Invoke_UnresolvedRequest_PreservesTheContextAlreadyOnTheRequest()
+        {
+            using var cache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
+            var resolver = new ConfiguredTenantResolver(cache, ConfiguredTenantResolver.CreateOptions());
+            var middleware = new TenantResolutionMiddleware(_ => Task.CompletedTask);
+            var request = CreateRequest("unknown", null, "localhost");
+            using var existing = new TenantContext(new TestTenant("from-upstream"));
+            request.SetTenantContext(existing);
+
+            await middleware.Invoke(request, resolver);
+
+            request.GetTenantContext().Should().BeSameAs(existing);
+            request.GetTenant<TestTenant>().TenantKey.Should().Be("from-upstream");
+        }
+
+        [Fact]
+        public async Task Invoke_ResolvedRequest_ReplacesTheContextAlreadyOnTheRequest()
+        {
+            using var cache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
+            var resolver = new ConfiguredTenantResolver(cache, ConfiguredTenantResolver.CreateOptions());
+            var middleware = new TenantResolutionMiddleware(_ => Task.CompletedTask);
+            var request = CreateRequest("beta", null, "localhost");
+            using var existing = new TenantContext(new TestTenant("from-upstream"));
+            request.SetTenantContext(existing);
+
+            await middleware.Invoke(request, resolver);
+
+            request.GetTenantContext().Should().NotBeSameAs(existing);
+            request.GetTenant<TestTenant>().TenantKey.Should().Be("beta");
+        }
+
+        [Fact]
+        public async Task Invoke_ResolverFailure_PropagatesAndDoesNotRunDownstream()
+        {
+            var failure = new InvalidOperationException("synthetic resolution failure");
+            var request = CreateRequest("beta", null, "localhost");
+            var calls = 0;
+            var middleware = new TenantResolutionMiddleware(_ =>
+            {
+                calls++;
+                return Task.CompletedTask;
+            });
+
+            Func<Task> invoke = () => middleware.Invoke(request, new FailingResolver(failure));
+
+            (await invoke.Should().ThrowExactlyAsync<InvalidOperationException>()).Which.Should().BeSameAs(failure);
+            calls.Should().Be(0);
+            request.GetTenantContext().Should().BeNull();
+        }
+
+        [Fact]
         public async Task Invoke_SeparateRequests_IsolatesTenantContextAndReusesTheSameTenant()
         {
             using var cache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
@@ -74,6 +126,15 @@ namespace Softprime.Framework.Multitenancy.Tests
             if (header != null)
                 context.Request.Headers[ConfiguredTenantResolver.TenantHeader] = header;
             return context;
+        }
+
+        private sealed class FailingResolver : ITenantResolver
+        {
+            private readonly Exception failure;
+
+            public FailingResolver(Exception failure) => this.failure = failure;
+
+            public Task<TenantContext> ResolveAsync(HttpContext context) => Task.FromException<TenantContext>(failure);
         }
     }
 }

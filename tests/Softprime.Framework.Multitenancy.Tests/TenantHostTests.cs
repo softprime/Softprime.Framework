@@ -50,6 +50,29 @@ namespace Softprime.Framework.Multitenancy.Tests
             (await unknown.Content.ReadAsStringAsync()).Should().BeEmpty();
         }
 
+        [Fact]
+        public async Task UsePerTenant_ConcurrentRequests_ReusesTheCorrectBranchAndContext()
+        {
+            await using var host = await TenantHost.StartAsync();
+            using var firstWarm = await host.RequestAsync("/orders", header: "alpha");
+            using var secondWarm = await host.RequestAsync("/orders?tenant=beta");
+
+            var requests = await Task.WhenAll(
+                host.RequestAsync("/orders", host: "alpha.example.test"),
+                host.RequestAsync("/orders", header: "beta"));
+            using var first = requests[0];
+            using var second = requests[1];
+
+            ResponseHeader(first, "X-Tenant-Branch").Should().Be("alpha");
+            ResponseHeader(first, "X-Scoped-Tenant").Should().Be("alpha");
+            ResponseHeader(second, "X-Tenant-Branch").Should().Be("beta");
+            ResponseHeader(second, "X-Scoped-Tenant").Should().Be("beta");
+            (await first.Content.ReadAsStringAsync()).Should().Be(await firstWarm.Content.ReadAsStringAsync());
+            (await second.Content.ReadAsStringAsync()).Should().Be(await secondWarm.Content.ReadAsStringAsync());
+            host.BuildCounts["alpha"].Should().Be(1);
+            host.BuildCounts["beta"].Should().Be(1);
+        }
+
         [Theory]
         [InlineData(false, HttpStatusCode.Found)]
         [InlineData(true, HttpStatusCode.MovedPermanently)]

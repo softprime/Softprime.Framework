@@ -104,6 +104,43 @@ namespace Softprime.Framework.Multitenancy.Tests
         }
 
         [Fact]
+        public async Task ResolveAsync_ResolverFailsOnce_RetriesAndCachesOnlyTheSuccess()
+        {
+            using var cache = CreateCache();
+            var failure = new InvalidOperationException("synthetic resolution failure");
+            var calls = 0;
+            var resolver = new RecordingResolver(cache, key => ++calls == 1
+                ? throw failure
+                : CreateTrackedContext(key));
+
+            Func<Task> first = () => ResolveAsync(resolver, "alpha");
+            (await first.Should().ThrowExactlyAsync<InvalidOperationException>()).Which.Should().BeSameAs(failure);
+            cache.Get("alpha").Should().BeNull();
+            var second = await ResolveAsync(resolver, "alpha");
+
+            second.Should().NotBeNull();
+            var third = await ResolveAsync(resolver, "alpha");
+            third.Should().BeSameAs(second);
+            resolver.RequestedKeys.Should().Equal("alpha", "alpha");
+        }
+
+        [Fact]
+        public async Task ResolveAsync_AliasReplacesCanonicalEntry_DisposesThePreviousContext()
+        {
+            using var cache = CreateCache();
+            var resolver = new RecordingResolver(cache, _ => CreateTrackedContext("alpha"));
+            var previous = await ResolveAsync(resolver, "alpha");
+            var previousProbe = (DisposalProbe)previous.Properties[ProbeKey];
+
+            var replacement = await ResolveAsync(resolver, "alias");
+
+            replacement.Should().NotBeSameAs(previous);
+            (await ResolveAsync(resolver, "alpha")).Should().BeSameAs(replacement);
+            await WaitForDisposalAsync(previousProbe);
+            ((DisposalProbe)replacement.Properties[ProbeKey]).Calls.Should().Be(0);
+        }
+
+        [Fact]
         public void Dispose_RepeatedCalls_DisposePropertiesAndTenantOnce()
         {
             var tenant = new DisposableTenant();
