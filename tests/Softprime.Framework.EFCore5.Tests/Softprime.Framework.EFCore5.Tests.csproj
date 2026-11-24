@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>net6.0;net10.0</TargetFrameworks>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <LangVersion>latest</LangVersion>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" Condition="'$(TargetFramework)' != 'net6.0'" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" Condition="'$(TargetFramework)' == 'net6.0'" />
+        <PackageReference Include="xunit" Version="2.9.3" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" PrivateAssets="all" Condition="'$(TargetFramework)' != 'net6.0'" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" PrivateAssets="all" Condition="'$(TargetFramework)' == 'net6.0'" />
+        <PackageReference Include="FluentAssertions" Version="7.2.0" />
+        <ProjectReference Include="../../src/data/Softprime.Framework.EFCore5/Softprime.Framework.EFCore5.csproj" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.17" />
+        <ProjectReference Include="../../src/data/Softprime.Framework.Domain/Softprime.Framework.Domain.csproj" />
+        <Compile Include="../EFCore/RepositoryTests.cs" Link="RepositoryTests.cs" />
+    </ItemGroup>
+</Project>
