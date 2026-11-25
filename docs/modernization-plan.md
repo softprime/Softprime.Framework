@@ -312,9 +312,9 @@ A implementação futura será considerada validada quando os 14 projetos import
 - **Decisão Explícita sobre `net48` e Consumidores Legados:**
   - O Shared Framework moderno não é referenciável nem suportado em `.NET Framework 4.8` ou `.NET Standard 2.0/2.1`.
   - O suporte a `net48` e `netstandard2.x` é **descontinuado** em `Api` e `Multitenancy` na versão **`3.0.0`** (MAJOR SemVer).
-  - Consumidores corporativos legados em `net48` permanecem atendidos pela linha estável congelada **`2.0.0`** no feed corporativo.
+  - A decisão é manter a linha legada **`2.0.0`** para consumidores em `net48`. A disponibilidade dessa versão no feed corporativo ainda precisa ser confirmada.
 - **Preservação de Contrato em `IApi<TDto, TId>`:**
-  - Manutenção integral do retorno `Task<IActionResult>` em todos os métodos CRUD (`Get`, `Post`, `Put`, `Delete`), assegurando 100% de compatibilidade binária e de compilação para os controllers existentes.
+  - Preservar as assinaturas CRUD e o retorno `Task<IActionResult>`. Validar a compatibilidade binária, de compilação e de comportamento com baseline de API e aplicações de referência no shared framework moderno.
 - **Endurecimento de Segurança em `ApiKeyAuthorizeFilter`:**
   - Preservação da herança `ActionFilterAttribute` e do retorno HTTP `403 Forbidden` (`StatusCodeResult(StatusCodes.Status403Forbidden)`).
   - Modernização planejada da leitura de cabeçalho (`TryGetValue`) e comparação de tempo constante (`CryptographicOperations.FixedTimeEquals`) contra ataques de temporização (*timing attacks*).
@@ -456,6 +456,11 @@ de atribuição MIT.
 | [#20] | [Samples] Aplicação demonstrativa integrada (08) | P2 | DX | #19, #4, #5, #6 | Pendente |
 | [#21] | [CI] Compilar e executar smoke tests dos samples | P2 | DX | #18, #8 | Entregue ([samples-ci.yml](../.github/workflows/samples-ci.yml)) |
 
+### Critérios de aceite e merges de origem (#4 e #13)
+
+- **[#4] · Planejamento ASP.NET Core e Multitenancy.** O [PR #30](https://github.com/softprime/Softprime.Framework/pull/30), integrado no [merge `2fbaf64`](https://github.com/softprime/Softprime.Framework/commit/2fbaf6465da3e83c92185df83fd4baaa2d6ca02c), documentou a adoção de `Microsoft.AspNetCore.App`, a adaptação de pipeline e DI e a manutenção da linha legada para `net48`. O [plano da camada web](aspnetcore-modernization-plan.md) registra o impacto de mudanças em `IApi<TDto, TId>` e preserva o retorno HTTP 403 do `ApiKeyAuthorizeFilter`. A alteração dos projetos e os testes de compatibilidade pertencem à implementação da Fase 2.
+- **[#13] · Diretrizes de arquitetura e governança.** O [PR #33](https://github.com/softprime/Softprime.Framework/pull/33), integrado no [merge `102d710`](https://github.com/softprime/Softprime.Framework/commit/102d710bbdb7730a32ec3a7beb329251dd64f44c), separou a arquitetura vigente da arquitetura alvo no [README](../README.md) e nas diretrizes Kiro de [produto](../.kiro/steering/product.md), [estrutura](../.kiro/steering/structure.md) e [tecnologia](../.kiro/steering/tech.md). Os novos projetos seguem a [matriz de targets e critérios de exceção](target-compatibility-matrix.md) e a [política de versionamento](nuget-versioning-policy.md). `netstandard2.1` e a versão declarada `2.0.0` descrevem o legado.
+
 ### Primeiro lote seguro de execução
 
 Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento/levantamento, não alteram código e destravam todo o resto. Nenhum PR de modernização de código antes de os gates da Fase 0/1 fecharem.
@@ -466,7 +471,7 @@ Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento
 
 - **Consumidores externos:** não haverá levantamento externo. Validar compatibilidade por contratos públicos, matriz de targets e aplicações de referência. O inventário técnico permanece; versões publicadas no feed continuam desconhecidas.
 - **`Common.Security`:** Auditoria concluída na issue [#6] em [docs/dependency-and-security-audit.md](dependency-and-security-audit.md). Formalizado o requisito de retrocompatibilidade de leitura de dados preexistentes e especificado o rehash transparente no login.
-- **`net48` + ASP.NET Core moderno:** mitigado e formalizado no planejamento da issue [#4] ([docs/aspnetcore-modernization-plan.md](aspnetcore-modernization-plan.md)): incompatibilidade resolvida com a descontinuação formal de `net48` nas versões `3.0.0` de `Api` e `Multitenancy`, mantendo os consumidores legados atendidos na linha congelada `2.0.0` do feed corporativo.
+- **`net48` + ASP.NET Core moderno:** o [plano da issue #4](aspnetcore-modernization-plan.md) prevê retirar o suporte a `net48` de `Api` e `Multitenancy` na linha `3.0.0` e manter a linha legada `2.0.0`. A implementação e a confirmação da disponibilidade no feed corporativo seguem pendentes.
 - **Runners de CI:** mitigado e formalizado no planejamento da esteira de CI em [#8] ([docs/ci-pipeline-spec.md](ci-pipeline-spec.md)) com topologia unificada 100% Windows (`windows-latest`), garantindo paridade com a produção (IIS/Windows Server) e suporte direto a `net48` e aos runtimes modernos.
 - **Documentação:** Resolvido na issue [#13]. As diretrizes em `.kiro/steering/` (`tech.md`, `product.md`, `structure.md`) e `README.md` foram devidamente harmonizadas, eliminando a instrução inadequada de `netstandard2.1`/`2.0.0` para novos projetos e separando o estado atual factual (2.0.0) da arquitetura alvo (SemVer 2.0.0, targets [#3], CI [#8] e governança [#17]/[#22] em `CONTRIBUTING.md`).
 - **Persistência legada vs. EF Core moderno:** mitigado e formalizado no planejamento da issue [#5] ([docs/data-layer-modernization-plan.md](data-layer-modernization-plan.md)): EF6 e NHibernate preservados como linhas ativas independentes; EFCore3 e EFCore5 congelados na linha 2.0.0; e novo pacote EFCore10 adotará targets net10.0;net8.0 sem remoções prematuras.
