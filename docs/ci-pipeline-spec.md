@@ -445,13 +445,17 @@ jobs:
 
 ### Validação implementada dos samples (#21)
 
-O workflow dedicado `samples-ci.yml` executa `samples/validate-ci.ps1`.
-São 13 combinações em cada modo de referência (26 execuções): seis samples
-em `net8.0`/`net10.0` e Data-EFCore provisoriamente em `net6.0`.
+O workflow `samples-ci.yml` executa `samples/validate-ci.ps1` em pull requests
+e pushes para as branches configuradas. O runner Windows também compila e
+empacota a solução de produção, que inclui bibliotecas em `net48`.
+São 14 combinações em cada modo de referência (28 execuções): seis samples
+em `net8.0`/`net10.0`, Data-EFCore em `net6.0` e CompleteSample em `net10.0`.
+O CompleteSample cria um arquivo SQLite temporário para cada execução, testa
+os cadastros e o isolamento de tenants e descarta o arquivo ao terminar.
 O segundo modo consome pacotes locais com versão exclusiva, cache isolado e
 mapeamento de fontes que restringe `Softprime.Framework.*` ao feed gerado.
 Os assets de restore e os metadados do cache são conferidos antes do build.
-A auditoria avalia `IsPackable` de cada sample e rejeita qualquer pacote gerado
+A auditoria avalia `IsPackable` dos oito samples e rejeita qualquer pacote gerado
 por seu `pack`, sem depender de convenções de nomes. Comandos nativos com exit
 code diferente de zero interrompem a validação. Pacotes de validação e assets
 são guardados por sete dias como artefatos; não há publicação.

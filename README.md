@@ -139,6 +139,17 @@ dotnet build src/Softprime.Framework.All.sln -c Release
 
 ## Exemplos de Uso
 
+### Trilha de samples executáveis
+
+Comece pelos samples 01 a 07 para experimentar cada componente em separado.
+O sample 08 reúne cadastro, API, persistência e isolamento de tenants em uma
+aplicação local com SQLite e e-mail simulado. O índice da trilha tem os comandos
+para executar cada exemplo. [Índice dos samples](samples/README.md) · [Sample integrado](samples/08-CompleteSample/README.md)
+
+O padrão didático descreve como documentar novos exemplos. O CI compila os
+samples, executa os smoke tests com referências a projetos e pacotes locais e
+confirma que os exemplos ficam fora do empacotamento. [Padrão dos samples](docs/samples-design.md) · [Workflow de validação](.github/workflows/samples-ci.yml)
+
 ### Repositório Genérico de Domínio
 ```csharp
 // Entidade de domínio com DomainSignature

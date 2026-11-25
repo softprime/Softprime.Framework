@@ -51,7 +51,7 @@ jobs:
           restore-keys: |
             windows-samples-nuget-
 
-      - name: Validate project and package consumption (26 smoke tests)
+      - name: Build samples, run smoke tests and audit packages
         run: ./samples/validate-ci.ps1
 
       - name: Upload validation evidence
