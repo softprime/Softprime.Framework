@@ -13,15 +13,22 @@ namespace Softprime.Framework.Mailer.SendGrid
     public class SendGridDispatcher : ISoftprimeMailerDispatcher
     {
         private readonly SendGridSettings _sendGridSettings;
+        private readonly Func<SendGridSettings, ISendGridClient> _createClient;
 
         public SendGridDispatcher(SendGridSettings sendGridSettings)
+            : this(sendGridSettings, current => new SendGridClient(current.ApiKey))
+        {
+        }
+
+        internal SendGridDispatcher(SendGridSettings sendGridSettings, Func<SendGridSettings, ISendGridClient> createClient)
         {
             _sendGridSettings = sendGridSettings;
+            _createClient = createClient;
         }
 
         public async Task<MailerResponse> Send(MailAddress from, MailAddress to, string subject, string htmlContent, string plainTextContent = null, System.Net.Mail.Attachment[] attachments = null)
         {
-            var client = new SendGridClient(_sendGridSettings.ApiKey);
+            var client = _createClient(_sendGridSettings);
 
             var msg = MailHelper.CreateSingleEmail(
                 new EmailAddress(from.Address, from.DisplayName),

@@ -44,11 +44,17 @@ O script executa 14 combinações de sample e runtime com referências a projeto
 e repete as 14 com pacotes NuGet locais. Os samples 01/02/04/05/06/07 rodam em
 `net10.0` e `net8.0`, o 03 em `net6.0` com EFCore5 e o 08 em `net10.0` com EFCore10.
 
+A [execução de 18/11/2026 na `main`](https://github.com/softprime/Softprime.Framework/actions/runs/44386736747),
+no commit `fdafacf`, passou nos dois modos de referência e confirmou que os
+sete samples 01–07 ficaram fora do empacotamento. A execução cobre o sample 03
+com SQLite na linha EFCore5.
+
 Os samples 01–07 usam `ProjectReference` por padrão. O sample 08 usa
-`PackageReference` com o feed gerado pelo script. Em modo pacote, o script usa
-`UseInstalledPackages=true` e fornece `FrameworkPackageVersion`. Ele gera uma versão exclusiva
-de validação dos pacotes de produção, restaura em cache vazio e confere nos
-assets e metadados que todos os pacotes Softprime vieram do feed local.
+`PackageReference` por padrão. Para validar o consumo por pacotes, o script
+define `UseInstalledPackages=true`, gera uma versão exclusiva dos pacotes de
+produção e a informa em `FrameworkPackageVersion`. O restore usa um cache vazio
+e o script confere nos assets e metadados que todos os pacotes Softprime vieram
+do feed local.
 Dependências externas são restauradas do NuGet.org; após restore, os exemplos
 executam sem serviços externos. Nenhum pacote é publicado.
 
