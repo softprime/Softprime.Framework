@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+    <RazorCompileOnBuild>false</RazorCompileOnBuild>
+    <RazorCompileOnPublish>false</RazorCompileOnPublish>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UseInstalledPackages)' != 'true'">
+    <ProjectReference Include="..\..\src\api\Softprime.Framework.Api\Softprime.Framework.Api.csproj" />
+    <ProjectReference Include="..\..\src\api\Softprime.Framework.Api.Client\Softprime.Framework.Api.Client.csproj" />
+    <ProjectReference Include="..\..\src\api\Softprime.Framework.Api.Dto\Softprime.Framework.Api.Dto.csproj" />
+    <ProjectReference Include="..\..\src\data\Softprime.Framework.Domain\Softprime.Framework.Domain.csproj" />
+    <ProjectReference Include="..\..\src\data\Softprime.Framework.EFCore10\Softprime.Framework.EFCore10.csproj" />
+    <ProjectReference Include="..\..\src\mail\Softprime.Framework.Mailer\Softprime.Framework.Mailer.csproj" />
+    <ProjectReference Include="..\..\src\multitenant\Softprime.Framework.Multitenancy\Softprime.Framework.Multitenancy.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseInstalledPackages)' == 'true'">
+    <PackageReference Include="Softprime.Framework.Api" Version="$(FrameworkPackageVersion)" />
+    <PackageReference Include="Softprime.Framework.Api.Client" Version="$(FrameworkPackageVersion)" />
+    <PackageReference Include="Softprime.Framework.Api.Dto" Version="$(FrameworkPackageVersion)" />
+    <PackageReference Include="Softprime.Framework.Domain" Version="$(FrameworkPackageVersion)" />
+    <PackageReference Include="Softprime.Framework.EFCore10" Version="$(FrameworkPackageVersion)" />
+    <PackageReference Include="Softprime.Framework.Mailer" Version="$(FrameworkPackageVersion)" />
+    <PackageReference Include="Softprime.Framework.Multitenancy" Version="$(FrameworkPackageVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.15" />
+    <EmbeddedResource Include="Templates\BoasVindas.cshtml" />
+  </ItemGroup>
+
+</Project>
