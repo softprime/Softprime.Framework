@@ -46,6 +46,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		LICENSE.txt = LICENSE.txt
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Softprime.Framework.EFCore10", "data\Softprime.Framework.EFCore10\Softprime.Framework.EFCore10.csproj", "{6C682378-9AB9-4232-A020-245E38F4405E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -108,6 +110,10 @@ Global
 		{4CB0D6A4-E9C2-4338-B901-A3575749DE40}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4CB0D6A4-E9C2-4338-B901-A3575749DE40}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4CB0D6A4-E9C2-4338-B901-A3575749DE40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C682378-9AB9-4232-A020-245E38F4405E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C682378-9AB9-4232-A020-245E38F4405E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C682378-9AB9-4232-A020-245E38F4405E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C682378-9AB9-4232-A020-245E38F4405E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -127,6 +133,7 @@ Global
 		{0CECFE04-5C22-4C66-8EF8-19526D95A0BE} = {3AF16ADE-8FF1-4125-83E8-BAFA5E54B45C}
 		{DA35F2C2-1552-439C-8128-7A921533A669} = {AFBD5E7A-1DD6-4376-865D-E7EFA57682FE}
 		{4CB0D6A4-E9C2-4338-B901-A3575749DE40} = {91661D33-E018-4ADE-AB71-593989A82FDC}
+		{6C682378-9AB9-4232-A020-245E38F4405E} = {91661D33-E018-4ADE-AB71-593989A82FDC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {97DCF620-A4A1-4A9F-A727-53BC8F913A7F}

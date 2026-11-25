@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net48;net8.0;net10.0</TargetFrameworks>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Softprime.Framework.Common" Version="[$(FrameworkPackageVersion)]" />
+        <PackageReference Include="Softprime.Framework.Domain" Version="[$(FrameworkPackageVersion)]" />
+        <PackageReference Include="Softprime.Framework.Api.Dto" Version="[$(FrameworkPackageVersion)]" />
+        <PackageReference Include="Softprime.Framework.Mailer.AWS" Version="[$(FrameworkPackageVersion)]" />
+        <PackageReference Include="Softprime.Framework.Mailer.SendGrid" Version="[$(FrameworkPackageVersion)]" />
+    </ItemGroup>
+</Project>

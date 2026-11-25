@@ -16,7 +16,9 @@
 - [Padronização de metadados e versões (#9)](#padronização-de-metadados-e-versões-9)
 - [CI/CD planejado (#8)](#cicd-planejado-8)
 - [Plano de modernização ASP.NET Core / MVC (#4)](#plano-de-modernização-aspnet-core--mvc-4)
+- [Plano de modernização da camada de dados (#5)](#plano-de-modernização-da-camada-de-dados-5)
 - [Plano de migração (fases e gates)](#plano-de-migração-fases-e-gates)
+- [Auditoria de dependências e segurança (`Common.Security`) (#6)](#auditoria-de-dependências-e-segurança-commonsecurity-6)
 - [Backlog de issues](#backlog-de-issues)
 - [Riscos / pendências](#riscos--pendências)
 
@@ -324,6 +326,31 @@ A implementação futura será considerada validada quando os 14 projetos import
 
 ---
 
+## Plano de modernização da camada de dados (#5)
+
+Planejamento concluído. Implementação pendente.
+
+> **Planejamento oficial da camada de persistência aprovado na issue [#5]** (Fase 2 — Modernizar seletivamente). Documento de especificação detalhada: 👉 **[Plano de Modernização da Camada de Dados (`docs/data-layer-modernization-plan.md`)](data-layer-modernization-plan.md)**.
+
+### Síntese executiva do plano:
+- **Preservação e Manutenção das Linhas Legadas (`EF6`, `NH`, `EFCore3`, `EFCore5`):**
+  - **Não consolidação / Não remoção:** EF6 (6.4.4) e NHibernate (5.3.5) são ecossistemas e tecnologias totalmente independentes de EF Core. Ficam preservadas como linhas ativas no feed corporativo para assegurar o funcionamento dos sistemas legados em `.NET Framework 4.8` com SQL Server e Oracle.
+  - `Softprime.Framework.EFCore3` (3.1.11): Mantido congelado na versão `2.0.0` (com eventuais patches em `2.0.x`). Na Fase 2 de código, remove `netstandard2.1` por redundância, preservando `netstandard2.0;net48`.
+  - `Softprime.Framework.EFCore5` (5.0.2): Permanece congelado na versão `2.0.0` (target exclusivo `netstandard2.1`). Será depreciado no feed corporativo quando os consumidores migrarem para o EF Core moderno.
+- **Implementação da Nova Biblioteca Moderna `Softprime.Framework.EFCore10`:**
+  - Multi-targeting nos alvos modernos **`net10.0;net8.0`** (conforme aprovado na issue [#3]).
+  - Implementa `IRepository<T>` e `IUnitOfWork` sobre o EF Core 10 LTS e EF Core 8 LTS com dependências oficiais (`Microsoft.EntityFrameworkCore` 10.0.0 / 8.0.12).
+  - Versionamento inicial na linha **`3.0.0`** (MAJOR SemVer).
+- **Proteção e Mitigação de Riscos Comportamentais entre Versões de ORM:**
+  - *Tracking & Identity Resolution:* Suporte a `AsNoTrackingWithIdentityResolution()` para consultas somente leitura complexas.
+  - *Anti-patterns Assíncronos:* Eliminação dos wrappers `Task.Run` existentes no `EFRepository` legado em operações de `ChangeTracker` em memória (`DeleteAsync`, `UpdateAsync`).
+  - *Quirk de Paginação:* Preservação do cálculo legado de `out total` nas versões `2.0.x` das bibliotecas legadas; introdução de `Task<PagedResult<T>> FindPagedAsync(...)` na nova biblioteca moderna.
+  - *Operações em Lote:* Adoção de `ExecuteDeleteAsync` e `ExecuteUpdateAsync` diretamente no banco sem carregamento em memória.
+- **Invariante da Fase 2 (Planejamento):**
+  - Nenhuma alteração de código C# ou de arquivos de projeto (`.csproj`) foi realizada nesta rodada; todo o escopo de execução permanece documentado e especificado para os PRs subsequentes da Fase 2.
+
+---
+
 ## Plano de migração (fases e gates)
 
 ### Fase 0 — Conhecer e proteger (pré-requisito de qualquer código)
@@ -364,7 +391,51 @@ A implementação futura será considerada validada quando os 14 projetos import
 
 ---
 
+## Auditoria de dependências e segurança (`Common.Security`) (#6)
+
+Auditoria documental concluída. Implementação e validação das atualizações pendentes.
+
+> **Planejamento oficial de dependências e segurança aprovado na issue [#6]** (Fase 2 — Modernizar seletivamente). Documento de especificação detalhada: 👉 **[Relatório de Auditoria de Dependências e Segurança (`docs/dependency-and-security-audit.md`)](dependency-and-security-audit.md)**.
+
+### Síntese executiva da auditoria:
+- **Atualizações candidatas para dependências com vulnerabilidades conhecidas:**
+  - `Newtonsoft.Json 12.0.3` (`Softprime.Framework.Api.Client`): Vulnerabilidade de alta severidade (GHSA-5crp-9r3c-p9vr — DoS por StackOverflow). Atualização candidata: atualização para `Newtonsoft.Json 13.0.3` no target `netstandard2.0` (compatibilidade net48 a validar).
+  - `NHibernate 5.3.5` (`Softprime.Framework.NH`): Vulnerabilidade de alta severidade (GHSA-fg4q-ccq8-3r5q — SQL injection em mappings, HQL e utilitários). Atualização candidata: atualização para `NHibernate 5.7.1` e `FluentNHibernate 3.5.0` na linha legada 5.x, com validação dos mapeamentos.
+- **Desacoplamento e Estabilização do Mailer:**
+  - `RazorLight 2.0.0-rc.3` (`Softprime.Framework.Mailer`): Saída do pré-release antigo para a versão estável `RazorLight 2.3.1`.
+  - Desacoplamento arquitetural (achado do comparativo com Codout [#17]/[#22]): introdução da abstração `ITemplateRenderer` para separar o contrato de despacho de e-mails da compilação de templates Razor, viabilizando testes mais simples e novos renderizadores sem acoplamento forçado.
+- **Atualização Seletiva de Pacotes Adicionais:**
+  - `EntityFramework 6.4.4` (`Softprime.Framework.EF6`): Atualização para `EntityFramework 6.5.1` (candidata; depreciação e compatibilidade precisam ser verificadas).
+  - `AWSSDK.SimpleEmailV2 3.5.1.25`: Atualização para a linha estável madura `3.7.x` candidata, com suporte vigente a confirmar.
+  - `SendGrid 9.22.0`: Atualização menor/patch para `SendGrid 9.29.3`.
+- **Invariantes Invioláveis de Segurança e Retrocompatibilidade (`Common.Security`):**
+  - **Preservação de Leitura:** Nenhuma chave, IV ou rotina de descriptografia legada (`CryptoString.Decrypt`, `CryptoFile.DecryptFile`, `SimpleHash.VerifyHash`) será descontinuada ou alterada de forma incompatível. A leitura dos dados já cifrados deve ser validada com testes de regressão.
+  - **Criptografia Moderna Paralela:** Especificação de `AesCryptoString` (AES-256 com IV dinâmico e chave externa) com detecção automática de formato por prefixo (`$aes$v1$`) no `Decrypt`.
+  - **Rehash Transparente de Senhas no Login:** Especificação de `IPasswordHasher` moderno (Argon2id/PBKDF2). Durante a autenticação, se a senha for válida pelo algoritmo legado do `SimpleHash`, o sistema aciona o rehash transparente em background, atualizando o hash no banco sem exigir ação do usuário final.
+- **Invariante da Fase 2 (Planejamento):**
+  - Nenhuma alteração de código C# ou de arquivos de projeto (`.csproj`) foi realizada nesta rodada; todo o escopo de execução permanece documentado e especificado para os PRs subsequentes da Fase 2.
+
+---
+
 ## Backlog de issues
+
+### Frente A — avaliação de componentes (#22)
+
+A revisão de [docs/codout-gap-analysis.md](codout-gap-analysis.md), em 2026-11-17,
+compara revisões fixadas dos dois repositórios e apresenta recomendações para
+aprovação. Prioriza práticas de validação de pacotes/testes (#11/#8/#7) e a
+adaptação do desenho de Security/Mailer (#6). Os componentes novos permanecem
+candidatos sem demanda confirmada; nenhum pacote ou sub-issue de implementação
+é criado por esta análise. O registro de defeitos do próprio Codout impede
+presumir que suas implementações estejam prontas para incorporação.
+
+A #22 permanece aberta para aprovação do relatório. A cronologia pública e o
+nome do build de compatibilidade de Multitenancy estão registrados. A origem
+do código e a direção de eventual reaproveitamento permanecem indeterminadas.
+O relatório vincula os comentários cruzados verificados e documenta os requisitos
+de atribuição MIT.
+
+### Modernização dos pacotes
 
 | # | Título | Prioridade | Fase | Bloqueada por | Status / Entregável |
 |---|---|---|---|---|---|
@@ -376,9 +447,14 @@ A implementação futura será considerada validada quando os 14 projetos import
 | [#8]  | Planejamento de CI (GitHub Actions) | P1 | 1 | relaciona #7, #3, #12 | Entregue ([docs/ci-pipeline-spec.md](ci-pipeline-spec.md)) |
 | [#9]  | Centralizar metadados / avaliar CPM | P2 | 1 | relaciona #12, #3 | Entregue (Seção "Padronização de metadados e versões") |
 | [#4]  | ASP.NET Core / MVC 2.2 → moderno | P1 | 2 | relaciona #3, #10, #11, #12 | Entregue ([docs/aspnetcore-modernization-plan.md](aspnetcore-modernization-plan.md)) |
-| [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | relaciona #3, #10, #12 | Bloqueada |
-| [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | relaciona #3, #11, #12 | Bloqueada |
+| [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | relaciona #3, #10, #12 | Implementação pendente |
+| [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | relaciona #3, #11, #12 | Implementação pendente |
 | [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | relaciona #3, #12 | Entregue (`README.md`, `.kiro/steering/`, `CONTRIBUTING.md`) |
+| [#23] | [Frente B] Samples e experiência do desenvolvedor (DX) | P1 | DX | relaciona #18, #19, #20, #21 | Em andamento ([docs/samples-design.md](samples-design.md)) |
+| [#18] | [DX] Definir padrão de samples e documentação | P1 | DX | — | Entregue ([docs/samples-design.md](samples-design.md)) |
+| [#19] | [Samples] Exemplos isolados por componente (01–07) | P2 | DX | #18, #3 | Entregue ([samples/README.md](../samples/README.md)) |
+| [#20] | [Samples] Aplicação demonstrativa integrada (08) | P2 | DX | #19, #4, #5, #6 | Pendente |
+| [#21] | [CI] Compilar e executar smoke tests dos samples | P2 | DX | #18, #8 | Entregue ([samples-ci.yml](../.github/workflows/samples-ci.yml)) |
 
 ### Critérios de aceite e merges de origem (#4 e #13)
 
@@ -394,10 +470,11 @@ Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento
 ## Riscos / pendências
 
 - **Consumidores externos:** não haverá levantamento externo. Validar compatibilidade por contratos públicos, matriz de targets e aplicações de referência. O inventário técnico permanece; versões publicadas no feed continuam desconhecidas.
-- **`Common.Security`:** qualquer mudança de algoritmo precisa preservar a leitura de dados já criptografados; auditar antes de alterar (#6). Não modificar nesta fase.
+- **`Common.Security`:** Auditoria concluída na issue [#6] em [docs/dependency-and-security-audit.md](dependency-and-security-audit.md). Formalizado o requisito de retrocompatibilidade de leitura de dados preexistentes e especificado o rehash transparente no login.
 - **`net48` + ASP.NET Core moderno:** o [plano da issue #4](aspnetcore-modernization-plan.md) prevê retirar o suporte a `net48` de `Api` e `Multitenancy` na linha `3.0.0` e manter a linha legada `2.0.0`. A implementação e a confirmação da disponibilidade no feed corporativo seguem pendentes.
 - **Runners de CI:** mitigado e formalizado no planejamento da esteira de CI em [#8] ([docs/ci-pipeline-spec.md](ci-pipeline-spec.md)) com topologia unificada 100% Windows (`windows-latest`), garantindo paridade com a produção (IIS/Windows Server) e suporte direto a `net48` e aos runtimes modernos.
 - **Documentação:** Resolvido na issue [#13]. As diretrizes em `.kiro/steering/` (`tech.md`, `product.md`, `structure.md`) e `README.md` foram devidamente harmonizadas, eliminando a instrução inadequada de `netstandard2.1`/`2.0.0` para novos projetos e separando o estado atual factual (2.0.0) da arquitetura alvo (SemVer 2.0.0, targets [#3], CI [#8] e governança [#17]/[#22] em `CONTRIBUTING.md`).
+- **Persistência legada vs. EF Core moderno:** mitigado e formalizado no planejamento da issue [#5] ([docs/data-layer-modernization-plan.md](data-layer-modernization-plan.md)): EF6 e NHibernate preservados como linhas ativas independentes; EFCore3 e EFCore5 congelados na linha 2.0.0; e novo pacote EFCore10 adotará targets net10.0;net8.0 sem remoções prematuras.
 
 ---
 
@@ -415,3 +492,7 @@ Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento
 [#13]: https://github.com/softprime/Softprime.Framework/issues/13
 [#17]: https://github.com/softprime/Softprime.Framework/issues/17
 [#21]: https://github.com/softprime/Softprime.Framework/issues/21
+[#18]: https://github.com/softprime/Softprime.Framework/issues/18
+[#19]: https://github.com/softprime/Softprime.Framework/issues/19
+[#20]: https://github.com/softprime/Softprime.Framework/issues/20
+[#23]: https://github.com/softprime/Softprime.Framework/issues/23
