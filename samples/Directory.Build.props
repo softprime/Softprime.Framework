@@ -5,6 +5,7 @@
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UseInstalledPackages Condition="'$(UseInstalledPackages)' == '' and '$(MSBuildProjectName)' == 'Softprime.Samples.CompleteSample'">true</UseInstalledPackages>
     <UseInstalledPackages Condition="'$(UseInstalledPackages)' == ''">false</UseInstalledPackages>
     <FrameworkPackageVersion Condition="'$(FrameworkPackageVersion)' == ''">2.0.0</FrameworkPackageVersion>
     <SampleReferenceMode Condition="'$(UseInstalledPackages)' == 'true'">packages</SampleReferenceMode>
