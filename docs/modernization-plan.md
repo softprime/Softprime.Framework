@@ -18,6 +18,7 @@
 - [Plano de modernização ASP.NET Core / MVC (#4)](#plano-de-modernização-aspnet-core--mvc-4)
 - [Plano de modernização da camada de dados (#5)](#plano-de-modernização-da-camada-de-dados-5)
 - [Plano de migração (fases e gates)](#plano-de-migração-fases-e-gates)
+- [Auditoria de dependências e segurança (`Common.Security`) (#6)](#auditoria-de-dependências-e-segurança-commonsecurity-6)
 - [Backlog de issues](#backlog-de-issues)
 - [Riscos / pendências](#riscos--pendências)
 
@@ -390,7 +391,51 @@ Planejamento concluído. Implementação pendente.
 
 ---
 
+## Auditoria de dependências e segurança (`Common.Security`) (#6)
+
+Auditoria documental concluída. Implementação e validação das atualizações pendentes.
+
+> **Planejamento oficial de dependências e segurança aprovado na issue [#6]** (Fase 2 — Modernizar seletivamente). Documento de especificação detalhada: 👉 **[Relatório de Auditoria de Dependências e Segurança (`docs/dependency-and-security-audit.md`)](dependency-and-security-audit.md)**.
+
+### Síntese executiva da auditoria:
+- **Atualizações candidatas para dependências com vulnerabilidades conhecidas:**
+  - `Newtonsoft.Json 12.0.3` (`Softprime.Framework.Api.Client`): Vulnerabilidade de alta severidade (GHSA-5crp-9r3c-p9vr — DoS por StackOverflow). Atualização candidata: atualização para `Newtonsoft.Json 13.0.3` no target `netstandard2.0` (compatibilidade net48 a validar).
+  - `NHibernate 5.3.5` (`Softprime.Framework.NH`): Vulnerabilidade de alta severidade (GHSA-fg4q-ccq8-3r5q — SQL injection em mappings, HQL e utilitários). Atualização candidata: atualização para `NHibernate 5.7.1` e `FluentNHibernate 3.5.0` na linha legada 5.x, com validação dos mapeamentos.
+- **Desacoplamento e Estabilização do Mailer:**
+  - `RazorLight 2.0.0-rc.3` (`Softprime.Framework.Mailer`): Saída do pré-release antigo para a versão estável `RazorLight 2.3.1`.
+  - Desacoplamento arquitetural (achado do comparativo com Codout [#17]/[#22]): introdução da abstração `ITemplateRenderer` para separar o contrato de despacho de e-mails da compilação de templates Razor, viabilizando testes mais simples e novos renderizadores sem acoplamento forçado.
+- **Atualização Seletiva de Pacotes Adicionais:**
+  - `EntityFramework 6.4.4` (`Softprime.Framework.EF6`): Atualização para `EntityFramework 6.5.1` (candidata; depreciação e compatibilidade precisam ser verificadas).
+  - `AWSSDK.SimpleEmailV2 3.5.1.25`: Atualização para a linha estável madura `3.7.x` candidata, com suporte vigente a confirmar.
+  - `SendGrid 9.22.0`: Atualização menor/patch para `SendGrid 9.29.3`.
+- **Invariantes Invioláveis de Segurança e Retrocompatibilidade (`Common.Security`):**
+  - **Preservação de Leitura:** Nenhuma chave, IV ou rotina de descriptografia legada (`CryptoString.Decrypt`, `CryptoFile.DecryptFile`, `SimpleHash.VerifyHash`) será descontinuada ou alterada de forma incompatível. A leitura dos dados já cifrados deve ser validada com testes de regressão.
+  - **Criptografia Moderna Paralela:** Especificação de `AesCryptoString` (AES-256 com IV dinâmico e chave externa) com detecção automática de formato por prefixo (`$aes$v1$`) no `Decrypt`.
+  - **Rehash Transparente de Senhas no Login:** Especificação de `IPasswordHasher` moderno (Argon2id/PBKDF2). Durante a autenticação, se a senha for válida pelo algoritmo legado do `SimpleHash`, o sistema aciona o rehash transparente em background, atualizando o hash no banco sem exigir ação do usuário final.
+- **Invariante da Fase 2 (Planejamento):**
+  - Nenhuma alteração de código C# ou de arquivos de projeto (`.csproj`) foi realizada nesta rodada; todo o escopo de execução permanece documentado e especificado para os PRs subsequentes da Fase 2.
+
+---
+
 ## Backlog de issues
+
+### Frente A — avaliação de componentes (#22)
+
+A revisão de [docs/codout-gap-analysis.md](codout-gap-analysis.md), em 2026-11-17,
+compara revisões fixadas dos dois repositórios e apresenta recomendações para
+aprovação. Prioriza práticas de validação de pacotes/testes (#11/#8/#7) e a
+adaptação do desenho de Security/Mailer (#6). Os componentes novos permanecem
+candidatos sem demanda confirmada; nenhum pacote ou sub-issue de implementação
+é criado por esta análise. O registro de defeitos do próprio Codout impede
+presumir que suas implementações estejam prontas para incorporação.
+
+A #22 permanece aberta para aprovação do relatório. A cronologia pública e o
+nome do build de compatibilidade de Multitenancy estão registrados. A origem
+do código e a direção de eventual reaproveitamento permanecem indeterminadas.
+O relatório vincula os comentários cruzados verificados e documenta os requisitos
+de atribuição MIT.
+
+### Modernização dos pacotes
 
 | # | Título | Prioridade | Fase | Bloqueada por | Status / Entregável |
 |---|---|---|---|---|---|
@@ -405,6 +450,11 @@ Planejamento concluído. Implementação pendente.
 | [#5]  | Legado EF/NH + EF Core 10 | P1 | 2 | relaciona #3, #10, #12 | Implementação pendente |
 | [#6]  | Dependências + segurança `Common.Security` | P1 | 2 | relaciona #3, #11, #12 | Implementação pendente |
 | [#13] | [Docs/Kiro] Atualizar diretrizes | P1 | 3 | relaciona #3, #12 | Entregue (`README.md`, `.kiro/steering/`, `CONTRIBUTING.md`) |
+| [#23] | [Frente B] Samples e experiência do desenvolvedor (DX) | P1 | DX | relaciona #18, #19, #20, #21 | Em andamento ([docs/samples-design.md](samples-design.md)) |
+| [#18] | [DX] Definir padrão de samples e documentação | P1 | DX | — | Entregue ([docs/samples-design.md](samples-design.md)) |
+| [#19] | [Samples] Exemplos isolados por componente (01–07) | P2 | DX | #18, #3 | Entregue ([samples/README.md](../samples/README.md)) |
+| [#20] | [Samples] Aplicação demonstrativa integrada (08) | P2 | DX | #19, #4, #5, #6 | Pendente |
+| [#21] | [CI] Compilar e executar smoke tests dos samples | P2 | DX | #18, #8 | Entregue ([samples-ci.yml](../.github/workflows/samples-ci.yml)) |
 
 ### Primeiro lote seguro de execução
 
@@ -415,7 +465,7 @@ Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento
 ## Riscos / pendências
 
 - **Consumidores externos:** não haverá levantamento externo. Validar compatibilidade por contratos públicos, matriz de targets e aplicações de referência. O inventário técnico permanece; versões publicadas no feed continuam desconhecidas.
-- **`Common.Security`:** qualquer mudança de algoritmo precisa preservar a leitura de dados já criptografados; auditar antes de alterar (#6). Não modificar nesta fase.
+- **`Common.Security`:** Auditoria concluída na issue [#6] em [docs/dependency-and-security-audit.md](dependency-and-security-audit.md). Formalizado o requisito de retrocompatibilidade de leitura de dados preexistentes e especificado o rehash transparente no login.
 - **`net48` + ASP.NET Core moderno:** mitigado e formalizado no planejamento da issue [#4] ([docs/aspnetcore-modernization-plan.md](aspnetcore-modernization-plan.md)): incompatibilidade resolvida com a descontinuação formal de `net48` nas versões `3.0.0` de `Api` e `Multitenancy`, mantendo os consumidores legados atendidos na linha congelada `2.0.0` do feed corporativo.
 - **Runners de CI:** mitigado e formalizado no planejamento da esteira de CI em [#8] ([docs/ci-pipeline-spec.md](ci-pipeline-spec.md)) com topologia unificada 100% Windows (`windows-latest`), garantindo paridade com a produção (IIS/Windows Server) e suporte direto a `net48` e aos runtimes modernos.
 - **Documentação:** Resolvido na issue [#13]. As diretrizes em `.kiro/steering/` (`tech.md`, `product.md`, `structure.md`) e `README.md` foram devidamente harmonizadas, eliminando a instrução inadequada de `netstandard2.1`/`2.0.0` para novos projetos e separando o estado atual factual (2.0.0) da arquitetura alvo (SemVer 2.0.0, targets [#3], CI [#8] e governança [#17]/[#22] em `CONTRIBUTING.md`).
@@ -437,3 +487,7 @@ Começar **somente** pela Fase 0: [#10], [#11] e [#7]. São somente planejamento
 [#13]: https://github.com/softprime/Softprime.Framework/issues/13
 [#17]: https://github.com/softprime/Softprime.Framework/issues/17
 [#21]: https://github.com/softprime/Softprime.Framework/issues/21
+[#18]: https://github.com/softprime/Softprime.Framework/issues/18
+[#19]: https://github.com/softprime/Softprime.Framework/issues/19
+[#20]: https://github.com/softprime/Softprime.Framework/issues/20
+[#23]: https://github.com/softprime/Softprime.Framework/issues/23

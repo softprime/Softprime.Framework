@@ -39,4 +39,8 @@
     <ProjectReference Include="..\Softprime.Framework.Mailer\Softprime.Framework.Mailer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Softprime.Framework.Mailer.SendGrid.Tests" />
+  </ItemGroup>
+
 </Project>

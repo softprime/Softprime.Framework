@@ -1,0 +1,76 @@
+name: SDK Characterization & Package Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'samples/**'
+      - '.github/workflows/sdk-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'samples/**'
+      - '.github/workflows/sdk-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdk-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  characterization:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            6.0.x
+            8.0.x
+            10.0.x
+      - name: Build SDK and run discovered test projects
+        run: ./tests/run-characterization.ps1
+      - name: Upload reports by runtime
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-tests-${{ github.sha }}
+          path: artifacts/sdk-ci/tests/
+          retention-days: 7
+
+  packages:
+    runs-on: windows-latest
+    env:
+      SDK_PACKAGE_RUN: artifacts/sdk-ci/packages/${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            6.0.x
+            8.0.x
+            10.0.x
+      - name: Pack SDK and run sample consumers from isolated feed
+        run: ./samples/validate-ci.ps1 -PackageOnly -RunDirectory $env:SDK_PACKAGE_RUN
+      - name: Verify SDK asset selection and loading
+        run: ./tests/verify-package-assets.ps1 -RunDirectory $env:SDK_PACKAGE_RUN
+      - name: Upload packages and consumption evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-packages-${{ github.sha }}
+          path: |
+            ${{ env.SDK_PACKAGE_RUN }}/feed/*.nupkg
+            ${{ env.SDK_PACKAGE_RUN }}/*.log
+            ${{ env.SDK_PACKAGE_RUN }}/*.txt
+            ${{ env.SDK_PACKAGE_RUN }}/audit/
+            tests/PackageSmoke/obj/project.assets.json
+            samples/**/obj/packages/project.assets.json
+          retention-days: 7

@@ -13,10 +13,18 @@ namespace Softprime.Framework.Mailer.AWS
     public class AWSDispatcher : ISoftprimeMailerDispatcher
     {
         private readonly AWSSettings _settings;
+        private readonly Func<AWSSettings, IAmazonSimpleEmailServiceV2> _createClient;
 
         public AWSDispatcher(AWSSettings settings)
+            : this(settings, current => new AmazonSimpleEmailServiceV2Client(
+                new BasicAWSCredentials(current.AccessKey, current.SecretKey)))
+        {
+        }
+
+        internal AWSDispatcher(AWSSettings settings, Func<AWSSettings, IAmazonSimpleEmailServiceV2> createClient)
         {
             _settings = settings;
+            _createClient = createClient;
         }
 
         public async Task<MailerResponse> Send(MailAddress @from, 
@@ -28,7 +36,7 @@ namespace Softprime.Framework.Mailer.AWS
         {
             try
             {
-                var client = new AmazonSimpleEmailServiceV2Client(new BasicAWSCredentials(_settings.AccessKey, _settings.SecretKey));
+                var client = _createClient(_settings);
 
                 var response = await client.SendEmailAsync(new SendEmailRequest
                 {

@@ -1,0 +1,8 @@
+@model Softprime.Framework.Mailer.Tests.ReceiptModel
+<h1>Receipt for @Model.Customer</h1>
+<ul>
+@foreach (var item in Model.Items)
+{
+    <li>@item</li>
+}
+</ul>
